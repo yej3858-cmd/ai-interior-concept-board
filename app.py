@@ -882,6 +882,18 @@ label.checkbox-label:has(input[type="checkbox"]:checked),
     color: #FFFFFF !important;
     font-weight: 700 !important;
 }
+/* Force text color on the inner span Gradio renders inside each pill */
+label.checkbox-label span, .checkbox-label span {
+    color: #1E1A14 !important;
+}
+label.checkbox-label.selected span, .checkbox-label.selected span {
+    color: #FFFFFF !important;
+}
+label.checkbox-label:has(input[type="checkbox"]:checked) span,
+.checkbox-label:has(input[type="checkbox"]:checked) span {
+    color: #FFFFFF !important;
+}
+
 label.checkbox-label input[type="checkbox"], .checkbox-label input[type="checkbox"] {
     appearance: none !important;
     -webkit-appearance: none !important;
@@ -1068,7 +1080,7 @@ def _section_header(title: str) -> str:
 def _col_header(number: str, title: str) -> str:
     return (
         f'<p style="font-size:10px;font-weight:700;letter-spacing:2.5px;'
-        f'text-transform:uppercase;color:#B8B0A3;margin:0 0 16px;'
+        f'text-transform:uppercase;color:#3C3428;margin:0 0 16px;'
         f'padding-bottom:10px;border-bottom:1px solid #E4DDD4;">'
         f'<span style="color:#C57B57;margin-right:6px;">{number}</span>{title}'
         f'</p>'
