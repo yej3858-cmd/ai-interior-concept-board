@@ -23,18 +23,80 @@ except ImportError:
 
 
 # ─── Korean Mini-Dictionary ───────────────────────────────────────────────────
+# Covers all knowledge-base terms + common interior design vocabulary.
 
 KO_DICT = {
+    # Space types
     "도서관": "library",
-    "독서":   "reading",
-    "커뮤니티": "community",
-    "물결":   "wave",
-    "자연광": "natural light",
-    "목재":   "wood",
-    "차분한": "calm",
-    "개방감": "open space",
-    "서가":   "bookshelves",
     "라운지": "lounge",
+    "갤러리": "gallery",
+    "카페":   "cafe",
+    "오피스": "office",
+    "러닝 스페이스": "learning space",
+    "커뮤니티 스페이스": "community space",
+    "커뮤니티": "community",
+    # Moods
+    "차분한":       "calm",
+    "미니멀한":     "minimal",
+    "미래지향적인": "futuristic",
+    "아늑한":       "cozy",
+    "우아한":       "elegant",
+    "역동적인":     "dynamic",
+    "몰입감 있는":  "immersive",
+    "몰입":         "immersive",
+    # Materials
+    "목재":    "wood",
+    "콘크리트": "concrete",
+    "유리":    "glass",
+    "패브릭":  "fabric",
+    "금속":    "metal",
+    "석재":    "stone",
+    "벽돌":    "brick",
+    # Lighting
+    "자연 채광":     "natural light",
+    "자연광":        "natural light",
+    "따뜻한 조명":   "warm lighting",
+    "간접 조명":     "indirect lighting",
+    "드라마틱 조명": "dramatic lighting",
+    "확산 조명":     "diffused lighting",
+    "포인트 조명":   "accent lighting",
+    # Activities
+    "독서":  "reading",
+    "소셜":  "social",
+    "창작":  "creative",
+    "휴식":  "rest",
+    "학습":  "learning",
+    "전시":  "exhibition",
+    "협업":  "collaboration",
+    # Spatial
+    "개방형":    "open",
+    "레이어드":  "layered",
+    "높은 천장": "high ceiling",
+    "컴팩트":    "compact",
+    "유연한":    "flexible",
+    "폐쇄형":    "enclosed",
+    "유동적인":  "flowing",
+    # General interior design terms
+    "개방감":       "open space",
+    "서가":         "bookshelves",
+    "물결":         "wave",
+    "천장":         "ceiling",
+    "바닥":         "floor",
+    "벽":           "wall",
+    "창문":         "window",
+    "조명":         "lighting",
+    "가구":         "furniture",
+    "텍스처":       "texture",
+    "바이오필릭":   "biophilic",
+    "미니멀리즘":   "minimalism",
+    "인더스트리얼": "industrial",
+    "테라코타":     "terracotta",
+    "대리석":       "marble",
+    "황동":         "brass",
+    "린넨":         "linen",
+    "루버":         "louvre",
+    "루프탑":       "rooftop",
+    "파티션":       "partition",
 }
 
 
@@ -112,6 +174,17 @@ MOOD_DATA = {
     "Immersive":  {"ko": "몰입감 있는",  "en_adj": "atmospheric, enveloping, layered"},
 }
 
+# Mood-specific photography/rendering style cues for image prompts
+MOOD_PHOTO_STYLE = {
+    "Calm":       "soft natural daylight, calm and still composition, film photography aesthetic",
+    "Minimal":    "clean architectural photography, neutral palette, precise symmetrical framing",
+    "Futuristic": "cinematic architectural render, volumetric lighting, high-tech material surfaces",
+    "Cozy":       "warm interior photography, shallow depth of field, golden hour ambient light",
+    "Elegant":    "luxury interior photography, high-fashion editorial, polished refined surfaces",
+    "Dynamic":    "bold architectural photography, dramatic angles, vivid material contrast",
+    "Immersive":  "atmospheric interior photography, moody and enveloping, layered spatial depth",
+}
+
 LIGHTING_DATA = {
     "Natural Light":   {"ko": "자연 채광",     "desc": "floor-to-ceiling glazing and skylights"},
     "Warm":            {"ko": "따뜻한 조명",   "desc": "warm-toned incandescent and LED sources"},
@@ -161,11 +234,9 @@ def extract_custom_descriptors(extra: str) -> tuple:
 
 # ── [FUTURE] External Image Generation ───────────────────────────────────────
 #
-# These functions are scaffolded for future connection to a remote GPU server
-# (e.g. ComfyUI on a local desktop). They are NOT called in the current MVP.
-#
-# To activate: wire _future_generate() into generate_concept() at the
-# clearly marked FUTURE INTEGRATION HOOK below.
+# Scaffolded for future connection to a remote GPU server (e.g. ComfyUI).
+# NOT called in the current MVP.
+# To activate: wire into generate_concept() at the FUTURE INTEGRATION HOOK.
 
 WORKFLOW_PATH = Path("comfyui_workflow.json")
 
@@ -225,7 +296,6 @@ def _future_comfyui_generate(server_url: str, workflow: dict, timeout: int = 300
 
     url       = server_url.rstrip("/")
     client_id = str(uuid.uuid4())
-
     resp = _requests.post(
         f"{url}/prompt",
         json={"prompt": workflow, "client_id": client_id},
@@ -266,7 +336,7 @@ def _future_comfyui_generate(server_url: str, workflow: dict, timeout: int = 300
 
     raise TimeoutError(f"ComfyUI did not finish within {timeout} seconds")
 
-# ── End [FUTURE] External Image Generation ───────────────────────────────────
+# ── End [FUTURE] ─────────────────────────────────────────────────────────────
 
 
 # ─── PIL Utilities ────────────────────────────────────────────────────────────
@@ -286,60 +356,55 @@ def parse_image_size(size_str: str) -> tuple:
 
 # ══ PROMPT GENERATION LAYER ══════════════════════════════════════════════════
 #
-# Generates three distinct image prompts for the concept board:
-#
 #   Slot 1 — Main Concept Image   : full architectural / spatial view
 #   Slot 2 — Material / Detail    : close-up textures, material palette
 #   Slot 3 — Atmosphere / Experience: mood, lighting, human scale
 #
-# Each prompt is self-contained and usable independently with any
-# image-generation model (current: placeholder / upload; future: external GPU).
+# Each prompt is self-contained and usable with any image-generation model.
+# Photography style is differentiated per mood via MOOD_PHOTO_STYLE.
 #
 # ════════════════════════════════════════════════════════════════════════════
 
 def build_prompts(space, activities, materials, lighting, mood, spatial,
                   translated_extra, custom_descriptors):
-    """Return (main_prompt, material_prompt, atmosphere_prompt) as a tuple."""
+    """Return (main_prompt, material_prompt, atmosphere_prompt)."""
     sp  = SPACE_TYPES.get(space,  {"en_char": "contemporary interior architecture"})
     md  = MOOD_DATA.get(mood,     {"en_adj":  "calm and refined"})
+    photo_style = MOOD_PHOTO_STYLE.get(mood, "editorial interior photography, professional staging")
 
-    mat = ", ".join(m.lower() for m in materials)                         if materials  else "contemporary materials"
+    mat = ", ".join(m.lower() for m in materials)                        if materials  else "contemporary materials"
     lit = ", ".join(LIGHTING_DATA[l]["desc"] for l in lighting
-                    if l in LIGHTING_DATA)                                if lighting   else "balanced, purposeful lighting"
+                    if l in LIGHTING_DATA)                               if lighting   else "balanced, purposeful lighting"
     spt = ", ".join(SPATIAL_DATA[s]["desc"]  for s in spatial
-                    if s in SPATIAL_DATA)                                 if spatial    else "thoughtfully composed space"
-    act = ", ".join(a.lower() for a in activities)                        if activities else "multipurpose use"
+                    if s in SPATIAL_DATA)                                if spatial    else "thoughtfully composed space"
+    act = ", ".join(a.lower() for a in activities)                       if activities else "multipurpose use"
 
-    custom_str = f" Additional elements: {', '.join(custom_descriptors)}." if custom_descriptors else ""
+    custom_str  = f" Additional elements: {', '.join(custom_descriptors)}." if custom_descriptors else ""
     space_label = (space or "interior space").lower()
 
-    # Slot 1 — Main Concept Image: overall architectural / spatial composition
+    # Slot 1 — full spatial composition
     main_prompt = (
         f"A {md['en_adj']} {space_label}, {sp['en_char']}. "
-        f"Spatial quality: {spt}. "
-        f"Primary materials: {mat}. "
-        f"Lighting: {lit}. "
-        f"Programmed for {act}.{custom_str} "
-        f"High-end interior design photography, professional architectural staging, "
-        f"editorial portfolio quality."
+        f"Spatial quality: {spt}. Primary materials: {mat}. "
+        f"Lighting: {lit}. Programmed for {act}.{custom_str} "
+        f"{photo_style}, architectural portfolio quality."
     )
 
-    # Slot 2 — Material / Detail: close-up texture and material study
+    # Slot 2 — material and texture close-up
     material_prompt = (
         f"Material and texture detail study for a {md['en_adj']} {space_label}. "
         f"Close-up surfaces: {mat}. {sp['en_char']}.{custom_str} "
         f"Illuminated by {lit}. "
         f"Macro interior photography, material palette reference, architectural finish detail, "
-        f"soft editorial lighting."
+        f"{photo_style}."
     )
 
-    # Slot 3 — Atmosphere / Experience: mood, light, human-scale perspective
+    # Slot 3 — atmospheric mood and experience
     atmosphere_prompt = (
-        f"Atmospheric interior mood study: {md['en_adj']} ambiance in a {space_label}. "
-        f"{spt}. Lit by {lit}.{custom_str} "
-        f"Designed for {act}. "
-        f"Experiential space photography, soft and immersive editorial quality, "
-        f"human-scale interior perspective."
+        f"Atmospheric interior mood: {md['en_adj']} ambiance in a {space_label}. "
+        f"{spt}. Lit by {lit}.{custom_str} Designed for {act}. "
+        f"Experiential space photography, human-scale interior perspective, "
+        f"{photo_style}."
     )
 
     return main_prompt, material_prompt, atmosphere_prompt
@@ -392,29 +457,24 @@ def build_korean(space, activities, materials, lighting, mood, spatial,
 
 # ══ IMAGE SOURCE LAYER ════════════════════════════════════════════════════════
 #
-# Each of the three concept board image slots resolves its content with
-# the following priority:
-#
-#   1. future_img  — image returned by an external generator (not active yet)
-#   2. uploaded    — PIL image uploaded by the user through the UI
-#   3. placeholder — styled material/icon tile, always available
-#
-# Activating priority 1 requires wiring _future_comfyui_generate() into
-# generate_concept() at the marked FUTURE INTEGRATION HOOK.
+# Priority per slot:
+#   1. future_img  — external generator (not active yet)
+#   2. uploaded    — user-uploaded PIL image
+#   3. placeholder — styled material/icon tile
 #
 # ════════════════════════════════════════════════════════════════════════════
 
 def resolve_image_slot(future_img, uploaded_img, label, icon, mat_hex):
-    """Return HTML for one image slot using the three-level priority fallback."""
-    if future_img is not None:                          # Priority 1 — [FUTURE]
+    """Return HTML for one image slot using three-level priority fallback."""
+    if future_img is not None:
         b64 = pil_to_b64(future_img)
         if b64:
             return _generated_tile(b64, source_label="Generated")
-    if uploaded_img is not None:                        # Priority 2 — uploaded
+    if uploaded_img is not None:
         b64 = pil_to_b64(uploaded_img)
         if b64:
             return _generated_tile(b64, source_label="Uploaded")
-    return _img_tile(label, icon, mat_hex)              # Priority 3 — placeholder
+    return _img_tile(label, icon, mat_hex)
 
 
 # ─── HTML Board Components ────────────────────────────────────────────────────
@@ -444,22 +504,21 @@ def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%") -> str:
     )
     return (
         f'<div style="background:linear-gradient(145deg,{pale},{light});'
-        f' border:1px solid #D8D0C3; border-radius:10px; height:{height};'
-        f' min-height:128px; display:flex; flex-direction:column;'
-        f' align-items:center; justify-content:center; gap:10px;'
-        f' position:relative; overflow:hidden;">'
+        f'border:1px solid #D8D0C3;border-radius:10px;height:{height};'
+        f'min-height:128px;display:flex;flex-direction:column;'
+        f'align-items:center;justify-content:center;gap:10px;'
+        f'position:relative;overflow:hidden;">'
         f'<div style="position:absolute;inset:0;background-image:{grid_pat};'
         f'pointer-events:none;"></div>'
         f'<span style="font-size:28px;position:relative;z-index:1;opacity:0.65;">{icon}</span>'
         f'<span style="font-size:9px;font-weight:700;letter-spacing:2.5px;'
-        f'text-transform:uppercase;color:{icon_col};opacity:0.6;'
+        f'text-transform:uppercase;color:{icon_col};opacity:0.7;'
         f'text-align:center;padding:0 14px;position:relative;z-index:1;">{label}</span>'
         f'</div>'
     )
 
 
 def _generated_tile(b64: str, height: str = "100%", source_label: str = "Uploaded") -> str:
-    """Tile for uploaded or externally generated images."""
     return (
         f'<div style="border-radius:10px;overflow:hidden;height:{height};'
         f'min-height:128px;border:1px solid #D8D0C3;position:relative;">'
@@ -469,7 +528,7 @@ def _generated_tile(b64: str, height: str = "100%", source_label: str = "Uploade
         f'background:linear-gradient(transparent,rgba(38,50,56,0.45));'
         f'border-radius:0 0 10px 10px;">'
         f'<span style="font-size:8px;font-weight:700;letter-spacing:2px;'
-        f'text-transform:uppercase;color:rgba(255,253,247,0.85);">{source_label}</span>'
+        f'text-transform:uppercase;color:rgba(255,253,247,0.9);">{source_label}</span>'
         f'</div></div>'
     )
 
@@ -484,7 +543,7 @@ def _material_block(name: str) -> str:
         f'font-weight:700;letter-spacing:1.2px;text-transform:uppercase;'
         f'color:rgba(255,255,255,0.82);">{name.upper()}</span>'
         f'</div>'
-        f'<div style="font-size:11px;color:#263238;font-weight:500;margin-bottom:2px;">{d["ko"]}</div>'
+        f'<div style="font-size:11px;color:#3C3428;font-weight:600;margin-bottom:2px;">{d["ko"]}</div>'
         f'<div style="font-size:10px;color:#6F6A60;">{d["finish"]}</div>'
         f'</div>'
     )
@@ -500,19 +559,22 @@ def _chip(label: str, bg: str = "#EEE8DF", fg: str = "#4A4038",
     )
 
 
+def _board_label(text: str) -> str:
+    """Section label inside the HTML concept board — readable dark-muted tone."""
+    return (
+        f'<p style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;'
+        f'color:#7A7268;margin:0 0 12px;font-weight:700;">{text}</p>'
+    )
+
+
 # ─── HTML Board Builder ───────────────────────────────────────────────────────
 
 def build_html_board(
     space, activities, materials, lighting, mood, spatial,
     translated_extra, main_prompt,
     custom_descriptors=None,
-    # ── Image Source Layer ────────────────────────────────────────────────────
-    # Priority per slot: future_* > uploaded_* > placeholder
-    # future_* slots: set by [FUTURE INTEGRATION HOOK] in generate_concept()
     future_main=None, future_material=None, future_atmosphere=None,
-    # uploaded_* slots: set by user via gr.Image upload components
     uploaded_main=None, uploaded_material=None, uploaded_atmosphere=None,
-    # ─────────────────────────────────────────────────────────────────────────
     warning="",
 ):
     custom_descriptors = custom_descriptors or []
@@ -529,7 +591,6 @@ def build_html_board(
     accent    = MATERIAL_DATA.get(first_mat, MATERIAL_DATA["Wood"])["hex"]
     tile_mats = ((materials or ["Wood", "Concrete", "Stone"]) * 3)[:3]
 
-    # Resolve all three image slots through the image source priority system
     hero_tile = resolve_image_slot(
         future_main, uploaded_main,
         sp["img_labels"][0], sp["img_icons"][0],
@@ -555,13 +616,12 @@ def build_html_board(
     custom_section = ""
     if custom_descriptors:
         custom_chips = "".join(_chip(d, "#F5EDE6", "#6B3E28", "#D4B8A8") for d in custom_descriptors)
-        custom_section = f"""
-  <div style="background:#FFFDF7;border-radius:10px;padding:16px;
-              margin-bottom:10px;border:1px solid #D8D0C3;border-left:3px solid #C57B57;">
-    <p style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
-              color:#B8B0A3;margin:0 0 10px;font-weight:600;">Custom Concept Elements</p>
-    <div style="line-height:2;">{custom_chips}</div>
-  </div>"""
+        custom_section = (
+            f'<div style="background:#FFFDF7;border-radius:10px;padding:16px;'
+            f'margin-bottom:10px;border:1px solid #D8D0C3;border-left:3px solid #C57B57;">'
+            f'{_board_label("Custom Concept Elements")}'
+            f'<div style="line-height:2;">{custom_chips}</div></div>'
+        )
 
     ko_html   = _md_bold_to_html(
         build_korean(space, activities, materials, lighting, mood, spatial,
@@ -585,12 +645,10 @@ def build_html_board(
             padding:40px;border-radius:14px;max-width:900px;margin:0 auto;
             box-sizing:border-box;color:#263238;border:1px solid #D8D0C3;
             box-shadow:0 2px 20px rgba(38,50,56,0.06);">
-
   {warning_banner}
-
   <div style="margin-bottom:30px;padding-bottom:22px;border-bottom:1px solid #D8D0C3;">
     <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;
-              color:#B8B0A3;margin:0 0 12px;font-weight:500;">
+              color:#9A9288;margin:0 0 12px;font-weight:600;">
       Interior Concept Board &nbsp;·&nbsp; {space or 'Interior Space'}
     </p>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px;">
@@ -599,9 +657,7 @@ def build_html_board(
         {sp['ko']}
       </h1>
       <span style="display:inline-block;width:1px;height:22px;background:#D8D0C3;"></span>
-      <span style="font-size:14px;color:#6F6A60;font-weight:400;letter-spacing:0.3px;">
-        {mood_label}
-      </span>
+      <span style="font-size:14px;color:#6F6A60;font-weight:400;">{mood_label}</span>
     </div>
     <p style="font-size:12px;color:#6F6A60;margin:0;line-height:1.7;">
       {sp['en_char'].replace(',', ' &nbsp;·&nbsp;')}
@@ -609,7 +665,6 @@ def build_html_board(
     <div style="width:32px;height:2px;background:{accent};border-radius:1px;margin-top:16px;"></div>
   </div>
 
-  <!-- Image grid: Slot 1 hero (main concept) left; Slot 2 + 3 stacked right -->
   <div style="display:grid;grid-template-columns:1.6fr 1fr;
               grid-template-rows:148px 148px;gap:10px;margin-bottom:20px;">
     <div style="grid-column:1;grid-row:1/3;height:100%;">{hero_tile}</div>
@@ -619,26 +674,19 @@ def build_html_board(
 
   <div style="background:#FFFDF7;border-radius:10px;padding:20px;
               margin-bottom:10px;border:1px solid #D8D0C3;">
-    <p style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
-              color:#B8B0A3;margin:0 0 14px;font-weight:600;">Material Palette</p>
+    {_board_label("Material Palette")}
     <div style="display:flex;gap:12px;flex-wrap:wrap;">{mat_blocks}</div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
     <div style="background:#FFFDF7;border-radius:10px;padding:16px;border:1px solid #D8D0C3;">
-      <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                color:#B8B0A3;margin:0 0 10px;font-weight:600;">UX Activity</p>
-      <div style="line-height:2;">{act_chips}</div>
+      {_board_label("UX Activity")}<div style="line-height:2;">{act_chips}</div>
     </div>
     <div style="background:#FFFDF7;border-radius:10px;padding:16px;border:1px solid #D8D0C3;">
-      <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                color:#B8B0A3;margin:0 0 10px;font-weight:600;">Lighting</p>
-      <div style="line-height:2;">{lit_chips}</div>
+      {_board_label("Lighting")}<div style="line-height:2;">{lit_chips}</div>
     </div>
     <div style="background:#FFFDF7;border-radius:10px;padding:16px;border:1px solid #D8D0C3;">
-      <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                color:#B8B0A3;margin:0 0 10px;font-weight:600;">Spatial Quality</p>
-      <div style="line-height:2;">{spa_chips}</div>
+      {_board_label("Spatial Quality")}<div style="line-height:2;">{spa_chips}</div>
     </div>
   </div>
 
@@ -646,24 +694,19 @@ def build_html_board(
 
   <div style="background:#FFFDF7;border-radius:10px;padding:20px;
               margin-bottom:10px;border:1px solid #D8D0C3;border-left:3px solid {accent};">
-    <p style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
-              color:#B8B0A3;margin:0 0 10px;font-weight:600;">
-      개념 설명 &nbsp;·&nbsp; Concept Statement
-    </p>
+    {_board_label("개념 설명 &nbsp;·&nbsp; Concept Statement")}
     <p style="font-size:14px;color:#3C3830;line-height:1.9;margin:0;">{ko_html}</p>
   </div>
 
   <div style="background:#FFFDF7;border-radius:10px;padding:16px;
               margin-bottom:10px;border:1px solid #D8D0C3;">
-    <p style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
-              color:#B8B0A3;margin:0 0 10px;font-weight:600;">Tags</p>
+    {_board_label("Tags")}
     <div style="line-height:2.2;">{tag_chips}</div>
   </div>
 
   <div style="border-radius:10px;padding:16px;border:1px solid #D8D0C3;
               background:rgba(232,216,195,0.18);">
-    <p style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
-              color:#B8B0A3;margin:0 0 8px;font-weight:600;">Main Image Prompt Reference</p>
+    {_board_label("Main Image Prompt Reference")}
     <p style="font-size:12px;color:#6F6A60;margin:0;line-height:1.8;
               font-style:italic;">&ldquo;{main_prompt}&rdquo;</p>
   </div>
@@ -672,7 +715,6 @@ def build_html_board(
     <p style="font-size:9px;letter-spacing:3.5px;text-transform:uppercase;
               color:#C8C4BC;margin:0;">AI Interior Concept Board Generator</p>
   </div>
-
 </div>
 """
 
@@ -681,13 +723,9 @@ def build_html_board(
 
 def generate_concept(
     space, activities, materials, lighting, mood, spatial, extra,
-    # ── Image Source Layer: current MVP — user uploads ────────────────────────
     upload_main, upload_material, upload_atmosphere,
-    # ── [FUTURE INTEGRATION PARAMS] ──────────────────────────────────────────
-    # Received from the "Future Image Generation Settings" accordion.
-    # Currently not active — see FUTURE INTEGRATION HOOK below.
+    # [FUTURE] params — not active yet, see FUTURE INTEGRATION HOOK below
     use_external, external_url, neg_prompt, steps, cfg, img_size, seed,
-    # ─────────────────────────────────────────────────────────────────────────
 ):
     space      = space or "Library"
     mood       = mood  or "Calm"
@@ -699,7 +737,6 @@ def generate_concept(
 
     translated_extra, custom_descriptors = extract_custom_descriptors(extra)
 
-    # ── Prompt Generation Layer ───────────────────────────────────────────────
     main_prompt, material_prompt, atmosphere_prompt = build_prompts(
         space, activities, materials, lighting, mood, spatial,
         translated_extra, custom_descriptors,
@@ -709,34 +746,25 @@ def generate_concept(
                            translated_extra, custom_descriptors)
 
     # ── [FUTURE INTEGRATION HOOK] ─────────────────────────────────────────────
-    # Wire external image generation here when a GPU server is available.
-    # Each prompt maps to its corresponding concept board slot.
+    # Wire external GPU image generation here when a server is available.
     #
-    # Example (not active yet):
+    # if use_external and external_url and external_url.strip():
+    #     try:
+    #         workflow = _future_load_workflow()
+    #         if workflow:
+    #             w, h     = parse_image_size(img_size)
+    #             seed_val = int(seed) if int(seed) >= 0 else random.randint(0, 2**31 - 1)
+    #             neg      = neg_prompt or ""
+    #             wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val)
+    #             future_main = _future_comfyui_generate(external_url.strip(), wf1)
+    #             wf2 = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1)
+    #             future_material = _future_comfyui_generate(external_url.strip(), wf2)
+    #             wf3 = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2)
+    #             future_atmosphere = _future_comfyui_generate(external_url.strip(), wf3)
+    #     except Exception as e:
+    #         warning = f"⚠️ External generation failed: {str(e)[:120]}"
     #
-    #   if use_external and external_url and external_url.strip():
-    #       try:
-    #           workflow = _future_load_workflow()
-    #           if workflow:
-    #               w, h       = parse_image_size(img_size)
-    #               seed_val   = int(seed) if int(seed) >= 0 else random.randint(0, 2**31 - 1)
-    #               neg        = neg_prompt or ""
-    #               # Slot 1 — main concept
-    #               wf1        = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val)
-    #               future_main = _future_comfyui_generate(external_url.strip(), wf1)
-    #               # Slot 2 — material detail
-    #               wf2             = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1)
-    #               future_material = _future_comfyui_generate(external_url.strip(), wf2)
-    #               # Slot 3 — atmosphere
-    #               wf3               = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2)
-    #               future_atmosphere = _future_comfyui_generate(external_url.strip(), wf3)
-    #       except Exception as e:
-    #           warning = f"⚠️ External generation failed: {str(e)[:120]}"
-    #
-    # For now, all future slots return None → falls back to upload or placeholder.
-    future_main       = None   # [FUTURE] will be PILImage from external generator
-    future_material   = None   # [FUTURE] will be PILImage from external generator
-    future_atmosphere = None   # [FUTURE] will be PILImage from external generator
+    future_main = future_material = future_atmosphere = None
     # ── End [FUTURE INTEGRATION HOOK] ────────────────────────────────────────
 
     board = build_html_board(
@@ -751,8 +779,16 @@ def generate_concept(
         uploaded_atmosphere=upload_atmosphere,
     )
 
-    status_md = "✓ Concept generated."
+    n_uploads = sum(1 for x in [upload_main, upload_material, upload_atmosphere] if x is not None)
+    upload_note = f" · {n_uploads}장 이미지 사용" if n_uploads else ""
+    status_md = f"✓ {space} · {mood}{upload_note} — 컨셉 보드 생성 완료"
+
     return main_prompt, material_prompt, atmosphere_prompt, tags, ko_stmt, board, status_md
+
+
+def reset_inputs():
+    """Return default values for all input fields."""
+    return "Library", [], [], [], "Calm", [], "", None, None, None
 
 
 # ─── Styling ──────────────────────────────────────────────────────────────────
@@ -760,7 +796,6 @@ def generate_concept(
 CSS = """
 /* ══ Warm Minimal Studio ════════════════════════════════════════════ */
 
-/* CSS variable overrides — most reliable Gradio theming method */
 :root {
     --body-background-fill:                    #F7F3EA;
     --block-background-fill:                   #FFFDF7;
@@ -833,10 +868,7 @@ textarea:focus, input[type="text"]:focus, input[type="number"]:focus {
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(197,123,87,0.13) !important;
 }
-textarea::placeholder, input::placeholder {
-    color: #B8B0A3 !important;
-    font-style: italic !important;
-}
+textarea::placeholder, input::placeholder { color: #B8B0A3 !important; font-style: italic !important; }
 
 .wrap-inner, .multiselect, .wrap { background: #FFFDF7 !important; border-color: #D0C8BA !important; color: #1E1A14 !important; }
 .token { background: #EDE8DF !important; border: 1px solid #D0C8BA !important; color: #1E1A14 !important; }
@@ -844,7 +876,7 @@ textarea::placeholder, input::placeholder {
 .item, .list-items li { color: #1E1A14 !important; font-size: 13px !important; }
 .item:hover, .item.selected, .list-items li:hover { background: #F0EAE0 !important; }
 
-/* Checkbox chips — three-layer for max compatibility */
+/* Checkbox chips */
 .checkbox-group { gap: 6px !important; flex-wrap: wrap !important; padding: 4px 0 6px !important; }
 
 label.checkbox-label, .checkbox-label {
@@ -864,39 +896,21 @@ label.checkbox-label, .checkbox-label {
     display: inline-flex !important;
     align-items: center !important;
 }
-label.checkbox-label:hover, .checkbox-label:hover {
-    background: #E4EED8 !important;
-    border-color: #7A9868 !important;
-    color: #162410 !important;
-}
-label.checkbox-label.selected, .checkbox-label.selected {
-    background: #4E7040 !important;
-    border-color: #3C5C30 !important;
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
-}
+label.checkbox-label span, .checkbox-label span { color: #1E1A14 !important; }
+label.checkbox-label:hover, .checkbox-label:hover { background: #E4EED8 !important; border-color: #7A9868 !important; color: #162410 !important; }
+label.checkbox-label:hover span, .checkbox-label:hover span { color: #162410 !important; }
+label.checkbox-label.selected, .checkbox-label.selected,
 label.checkbox-label:has(input[type="checkbox"]:checked),
 .checkbox-label:has(input[type="checkbox"]:checked) {
-    background: #4E7040 !important;
-    border-color: #3C5C30 !important;
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
+    background: #4E7040 !important; border-color: #3C5C30 !important;
+    color: #FFFFFF !important; font-weight: 700 !important;
 }
-/* Force text color on the inner span Gradio renders inside each pill */
-label.checkbox-label span, .checkbox-label span {
-    color: #1E1A14 !important;
-}
-label.checkbox-label.selected span, .checkbox-label.selected span {
-    color: #FFFFFF !important;
-}
+label.checkbox-label.selected span, .checkbox-label.selected span,
 label.checkbox-label:has(input[type="checkbox"]:checked) span,
-.checkbox-label:has(input[type="checkbox"]:checked) span {
-    color: #FFFFFF !important;
-}
+.checkbox-label:has(input[type="checkbox"]:checked) span { color: #FFFFFF !important; }
 
 label.checkbox-label input[type="checkbox"], .checkbox-label input[type="checkbox"] {
-    appearance: none !important;
-    -webkit-appearance: none !important;
+    appearance: none !important; -webkit-appearance: none !important;
     width: 0 !important; height: 0 !important;
     margin: 0 !important; padding: 0 !important;
     border: none !important; opacity: 0 !important;
@@ -929,8 +943,9 @@ button.secondary {
 }
 button.secondary:hover { background: #F0E8DC !important; border-color: #B0A898 !important; }
 
-/* Image upload area */
-.upload-area .block { border-style: dashed !important; }
+/* Status message */
+.status-ok  { color: #4E7040 !important; font-size: 13px !important; font-weight: 600 !important; }
+.status-msg .prose p { color: #4E7040 !important; font-weight: 600 !important; margin: 0 !important; }
 
 /* Preset example cards */
 .example-card { flex: 1 !important; min-width: 0 !important; }
@@ -954,12 +969,13 @@ button.secondary:hover { background: #F0E8DC !important; border-color: #B0A898 !
     cursor: pointer !important;
 }
 .example-card button:hover {
-    background: #FDF5EE !important;
-    border-color: #C57B57 !important;
-    color: #6B2E08 !important;
-    transform: translateY(-2px) !important;
+    background: #FDF5EE !important; border-color: #C57B57 !important;
+    color: #6B2E08 !important; transform: translateY(-2px) !important;
     box-shadow: 0 6px 20px rgba(197,123,87,0.18) !important;
 }
+
+/* Upload hint text inside concept board tab */
+.upload-hint .prose p { color: #7A7268 !important; font-size: 12px !important; }
 
 .tabs { border: none !important; background: transparent !important; }
 .tab-nav { background: transparent !important; border-bottom: 1.5px solid #D0C8BA !important; padding: 0 !important; }
@@ -969,7 +985,7 @@ button.secondary:hover { background: #F0E8DC !important; border-color: #B0A898 !
 .tabitem { background: transparent !important; border: none !important; padding: 20px 0 0 !important; }
 
 .accordion { border: 1px solid #D0C8BA !important; border-radius: 12px !important; background: #FFFDF7 !important; overflow: hidden !important; }
-.accordion > .label-wrap { padding: 14px 18px !important; border-bottom: 1px solid #E8E0D4 !important; }
+.accordion > .label-wrap { padding: 14px 18px !important; }
 .accordion > .label-wrap span { font-size: 13px !important; font-weight: 600 !important; color: #3C3428 !important; letter-spacing: 0 !important; text-transform: none !important; }
 
 .prose, .md { color: #1E1A14 !important; }
@@ -989,10 +1005,7 @@ HEADER_HTML = """
             padding:52px 32px 44px;margin-bottom:4px;text-align:center;">
 
   <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;
-            color:#C0B8B0;margin:0 0 18px;font-weight:600;
-            font-family:'Helvetica Neue',Arial,sans-serif;">
-    Interior Design Studio
-  </p>
+            color:#C0B8B0;margin:0 0 18px;font-weight:600;">Interior Design Studio</p>
 
   <h1 style="font-size:36px;font-weight:300;letter-spacing:1.5px;
              color:#263238;margin:0 0 10px;line-height:1.15;
@@ -1000,67 +1013,33 @@ HEADER_HTML = """
     AI Concept Board Generator
   </h1>
 
-  <div style="width:32px;height:2px;background:#C57B57;border-radius:1px;
-              margin:0 auto 22px;"></div>
+  <div style="width:32px;height:2px;background:#C57B57;border-radius:1px;margin:0 auto 22px;"></div>
 
-  <p style="font-size:13px;color:#6F6A60;max-width:520px;margin:0 auto 36px;
-            line-height:1.9;font-family:'Helvetica Neue',Arial,sans-serif;">
-    Select your space parameters, upload concept images (optional), then
-    generate three image prompts and a full concept board.
+  <p style="font-size:13px;color:#6F6A60;max-width:520px;margin:0 auto 36px;line-height:1.9;">
+    공간 유형과 분위기를 선택하고 한국어 키워드를 입력하세요.<br>
+    3가지 이미지 프롬프트와 컨셉 보드가 자동으로 생성됩니다.
   </p>
 
-  <!-- Workflow steps -->
-  <div style="display:flex;align-items:center;justify-content:center;
-              gap:0;flex-wrap:wrap;max-width:760px;margin:0 auto;">
-
+  <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;max-width:760px;margin:0 auto;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;
-                  border:1.5px solid #D0C8BA;display:flex;align-items:center;
-                  justify-content:center;font-size:14px;">⌨️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-                   color:#A8A098;font-weight:600;">Keywords</span>
+      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">⌨️</div>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#A8A098;font-weight:600;">키워드</span>
     </div>
-
     <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;
-                  border:1.5px solid #D0C8BA;display:flex;align-items:center;
-                  justify-content:center;font-size:14px;">📝</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-                   color:#A8A098;font-weight:600;">3 Prompts</span>
+      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">📝</div>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#A8A098;font-weight:600;">3 프롬프트</span>
     </div>
-
     <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;
-                  border:1.5px solid #D0C8BA;display:flex;align-items:center;
-                  justify-content:center;font-size:14px;">🖼️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-                   color:#A8A098;font-weight:600;">Images</span>
+      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">🖼️</div>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#A8A098;font-weight:600;">이미지 업로드</span>
     </div>
-
     <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;
-                  border:1.5px solid #D0C8BA;display:flex;align-items:center;
-                  justify-content:center;font-size:14px;">🏷️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-                   color:#A8A098;font-weight:600;">Tags</span>
+      <div style="width:36px;height:36px;border-radius:50%;background:#FDF0E8;border:1.5px solid #DDB898;display:flex;align-items:center;justify-content:center;font-size:14px;">🎨</div>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#C57B57;font-weight:700;">컨셉 보드</span>
     </div>
-
-    <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#FDF0E8;
-                  border:1.5px solid #DDB898;display:flex;align-items:center;
-                  justify-content:center;font-size:14px;">🎨</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-                   color:#C57B57;font-weight:700;">Concept Board</span>
-    </div>
-
   </div>
 </div>
 """
@@ -1070,8 +1049,7 @@ def _section_header(title: str) -> str:
     return (
         f'<div style="display:flex;align-items:center;gap:14px;margin:28px 0 16px;">'
         f'<span style="font-size:10px;font-weight:700;letter-spacing:3px;'
-        f'text-transform:uppercase;color:#6B6058;white-space:nowrap;'
-        f'font-family:\'Helvetica Neue\',Arial,sans-serif;">{title}</span>'
+        f'text-transform:uppercase;color:#6B6058;white-space:nowrap;">{title}</span>'
         f'<div style="flex:1;height:1px;background:#D8D0C3;border-radius:1px;"></div>'
         f'</div>'
     )
@@ -1092,15 +1070,13 @@ BOARD_PLACEHOLDER = """
             padding:56px 40px;border-radius:14px;border:1.5px dashed #D0C8BA;
             text-align:center;color:#8A8278;">
   <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;
-            margin:0 0 18px;font-weight:600;color:#C0B8B0;">
-    Interior Concept Board
-  </p>
+            margin:0 0 18px;font-weight:600;color:#C0B8B0;">Interior Concept Board</p>
   <div style="font-size:44px;margin-bottom:20px;opacity:0.45;">🏛️</div>
   <p style="font-size:15px;font-family:'Georgia',serif;font-weight:300;
             color:#9A9288;line-height:2.0;margin:0;">
-    Configure your space above and click<br>
-    <span style="color:#C57B57;font-weight:600;">Generate Concept ✦</span><br>
-    to build your concept board.
+    위에서 공간을 설정하고<br>
+    <span style="color:#C57B57;font-weight:600;">Generate Concept ✦</span> 를 클릭하거나<br>
+    아래 예시 카드를 선택하세요.
   </p>
 </div>
 """
@@ -1168,10 +1144,9 @@ with gr.Blocks(
     css=CSS,
 ) as demo:
 
-    # ── Hero header ──────────────────────────────────────────────────────────
     gr.HTML(HEADER_HTML)
 
-    # ── 01 · Design Parameters ───────────────────────────────────────────────
+    # ── Input section: two-column ─────────────────────────────────────────────
     with gr.Row(equal_height=False):
 
         with gr.Column(scale=1, min_width=240):
@@ -1180,11 +1155,16 @@ with gr.Blocks(
             mood_in  = gr.Dropdown(choices=MOOD_LIST,  value="Calm",    label="Mood")
             extra_in = gr.Textbox(
                 label="Custom Concept Keywords",
-                placeholder="Free-form — English or Korean\ne.g. wave-like forms, 물결, 서가, biophilic wall",
+                placeholder=(
+                    "영어 또는 한국어 자유 입력\n"
+                    "예: wave-like forms, 물결, 서가, 바이오필릭, biophilic wall"
+                ),
                 lines=4,
             )
-            gen_btn    = gr.Button("Generate Concept  ✦", variant="primary", size="lg")
-            status_out = gr.Markdown(value="")
+            with gr.Row():
+                gen_btn   = gr.Button("Generate Concept  ✦", variant="primary")
+                reset_btn = gr.Button("↺ 초기화", variant="secondary", min_width=80)
+            status_out = gr.Markdown(value="", elem_classes=["status-msg"])
 
         with gr.Column(scale=2):
             gr.HTML(_col_header("02 ·", "Design Attributes"))
@@ -1193,59 +1173,28 @@ with gr.Blocks(
             lighting_in = gr.CheckboxGroup(choices=LIGHTING_LIST, label="Lighting Strategy")
             spatial_in  = gr.CheckboxGroup(choices=SPATIAL_LIST,  label="Volume / Spatial Quality")
 
-    # ── 03 · Concept Images (upload) ─────────────────────────────────────────
-    # Current MVP: users upload their own reference images for each slot.
-    # These map directly to the three concept board image positions.
-    # Future: these will be auto-populated by the external image generator.
-    gr.HTML(_section_header("03 · Concept Images  —  Upload or leave empty for placeholder"))
-    with gr.Row(elem_classes=["upload-area"]):
-        upload_main_in = gr.Image(
-            label="Slot 1 — Main Concept Image",
-            type="pil",
-            height=200,
-        )
-        upload_material_in = gr.Image(
-            label="Slot 2 — Material / Detail Image",
-            type="pil",
-            height=200,
-        )
-        upload_atmosphere_in = gr.Image(
-            label="Slot 3 — Atmosphere / Experience Image",
-            type="pil",
-            height=200,
-        )
-
-    # ── [FUTURE] External Image Generation Settings ───────────────────────────
-    # This accordion holds the configuration for an external GPU image generator
-    # (e.g. ComfyUI on a local desktop). The controls are present but the
-    # generate function currently ignores them — see FUTURE INTEGRATION HOOK.
-    # To activate: uncomment the hook in generate_concept() and wire use_external_in.
+    # ── Future settings (collapsed) ───────────────────────────────────────────
     with gr.Accordion("🔌  Future: External Image Generation Settings", open=False):
         gr.Markdown(
-            "_These settings will connect to a remote GPU server (e.g. ComfyUI) "
-            "to auto-generate images for all three concept board slots. "
-            "Not active in the current MVP — upload images above for now._"
+            "_GPU 서버(ComfyUI 등)를 연결하면 3개 슬롯에 이미지를 자동 생성합니다. "
+            "현재 MVP에서는 비활성 — 아래 Concept Board 탭에서 이미지를 직접 업로드하세요._"
         )
         with gr.Row():
             use_external_in = gr.Checkbox(label="Enable External Generator", value=False, scale=1)
-            external_url_in = gr.Textbox(
-                label="Server URL",
-                placeholder="http://192.168.0.15:8188",
-                scale=4,
-            )
+            external_url_in = gr.Textbox(label="Server URL", placeholder="http://192.168.0.15:8188", scale=4)
         neg_prompt_in = gr.Textbox(
             label="Negative Prompt",
             placeholder="blurry, low quality, distorted, oversaturated, people, text",
             lines=2,
         )
         with gr.Row():
-            steps_in   = gr.Slider(minimum=1,  maximum=100, step=1,   value=20,  label="Steps")
-            cfg_in     = gr.Slider(minimum=1,  maximum=20,  step=0.5, value=7.0, label="CFG Scale")
-            imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768",           label="Image Size")
+            steps_in   = gr.Slider(minimum=1, maximum=100, step=1,   value=20,  label="Steps")
+            cfg_in     = gr.Slider(minimum=1, maximum=20,  step=0.5, value=7.0, label="CFG Scale")
+            imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Image Size")
             seed_in    = gr.Number(value=-1, label="Seed  (−1 = random)", precision=0)
 
     # ── Quick Examples ────────────────────────────────────────────────────────
-    gr.HTML(_section_header("Quick Examples"))
+    gr.HTML(_section_header("Quick Examples — 클릭하면 자동 생성"))
     with gr.Row():
         preset_btns = []
         for preset in PRESET_EXAMPLES:
@@ -1258,52 +1207,69 @@ with gr.Blocks(
 
     # ── Results ───────────────────────────────────────────────────────────────
     gr.HTML(_section_header("Results"))
-    with gr.Tabs():
+    with gr.Tabs(selected=0) as results_tabs:
 
-        with gr.TabItem("📝  Image Prompts"):
-            gr.Markdown("_Three specialized prompts for each concept board image slot._")
+        with gr.TabItem("📝  Image Prompts", id=0):
+            gr.Markdown("_3개 슬롯별 이미지 생성 프롬프트 — 복사해서 바로 사용하세요._")
             main_prompt_out = gr.Textbox(
                 label="Slot 1 — Main Concept Image Prompt",
-                placeholder="Overall architectural / spatial composition prompt.",
+                placeholder="전체 공간 / 건축 구성 프롬프트",
                 lines=4,
             )
             material_prompt_out = gr.Textbox(
                 label="Slot 2 — Material / Detail Image Prompt",
-                placeholder="Close-up material and texture study prompt.",
+                placeholder="소재 클로즈업 텍스처 프롬프트",
                 lines=4,
             )
             atmo_prompt_out = gr.Textbox(
                 label="Slot 3 — Atmosphere / Experience Image Prompt",
-                placeholder="Mood, lighting, and experiential quality prompt.",
+                placeholder="분위기 · 조명 · 경험 프롬프트",
                 lines=4,
             )
 
-        with gr.TabItem("🏷️  Tags"):
+        with gr.TabItem("🏷️  Tags", id=1):
             tags_out = gr.Textbox(
                 label="Hashtags",
-                placeholder="Design hashtags will appear here.",
-                lines=3,
+                placeholder="디자인 해시태그가 여기 표시됩니다.",
+                lines=4,
             )
 
-        with gr.TabItem("🇰🇷  Korean Statement"):
+        with gr.TabItem("🇰🇷  Korean Statement", id=2):
             korean_out = gr.Markdown(
-                value="*Select options above and click **Generate Concept** to see the Korean concept statement.*"
+                value="*위에서 옵션을 선택하고 **Generate Concept** 을 클릭하면 한국어 개념 설명이 생성됩니다.*"
             )
 
-        with gr.TabItem("🎨  Concept Board"):
+        with gr.TabItem("🎨  Concept Board", id=3):
+            # Image uploads live here — in context of where they're used
+            gr.Markdown(
+                "_각 슬롯에 참고 이미지를 업로드하세요 (선택사항). "
+                "업로드하지 않으면 소재 플레이스홀더가 사용됩니다._",
+                elem_classes=["upload-hint"],
+            )
+            with gr.Row():
+                upload_main_in = gr.Image(
+                    label="Slot 1 — Main Concept Image",
+                    type="pil",
+                    height=180,
+                )
+                upload_material_in = gr.Image(
+                    label="Slot 2 — Material / Detail Image",
+                    type="pil",
+                    height=180,
+                )
+                upload_atmosphere_in = gr.Image(
+                    label="Slot 3 — Atmosphere / Experience Image",
+                    type="pil",
+                    height=180,
+                )
             board_out = gr.HTML(value=BOARD_PLACEHOLDER)
 
-    # ── Wire events ──────────────────────────────────────────────────────────
-    preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
-    for btn, data in preset_btns:
-        btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
+    # ── Event wiring ──────────────────────────────────────────────────────────
 
     inputs = [
         space_in, activity_in, material_in, lighting_in,
         mood_in, spatial_in, extra_in,
-        # Image source layer — current MVP
         upload_main_in, upload_material_in, upload_atmosphere_in,
-        # Future integration params — not active yet
         use_external_in, external_url_in, neg_prompt_in,
         steps_in, cfg_in, imgsize_in, seed_in,
     ]
@@ -1312,8 +1278,28 @@ with gr.Blocks(
         tags_out, korean_out, board_out, status_out,
     ]
 
-    gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
-    extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
+    # Generate button → run → switch to Concept Board tab
+    (gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
+            .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
+
+    # Enter key in keyword field also triggers generation
+    (extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
+             .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
+
+    # Reset button — clears all design inputs and uploaded images
+    reset_outputs = [
+        space_in, activity_in, material_in, lighting_in,
+        mood_in, spatial_in, extra_in,
+        upload_main_in, upload_material_in, upload_atmosphere_in,
+    ]
+    reset_btn.click(fn=reset_inputs, inputs=[], outputs=reset_outputs)
+
+    # Preset cards — load values, then auto-generate, then switch to board tab
+    preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
+    for btn, data in preset_btns:
+        (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
+            .then(fn=generate_concept, inputs=inputs, outputs=outputs)
+            .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
 
 if __name__ == "__main__":
     demo.launch()
