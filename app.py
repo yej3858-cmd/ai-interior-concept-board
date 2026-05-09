@@ -847,7 +847,9 @@ footer { display: none !important; }
     box-shadow: 0 1px 8px rgba(38,50,56,0.05) !important;
 }
 
-.block .label-wrap > span, label > span, .block label > span, fieldset legend {
+.block .label-wrap > span, label > span, .block label > span, fieldset legend,
+.block .label-wrap > label, .block .label-wrap label, .label-wrap label,
+.block > label, .form > label, .block label, .wrap label {
     font-size: 10px !important;
     font-weight: 700 !important;
     letter-spacing: 2px !important;
