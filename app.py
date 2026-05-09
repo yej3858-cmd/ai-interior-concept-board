@@ -734,211 +734,257 @@ def generate_concept(
 # ─── Styling ──────────────────────────────────────────────────────────────────
 
 CSS = """
-/* ── Warm Minimal Studio Theme ────────────────────────────────────── */
+/* ══ Warm Minimal Studio — Readability Pass ════════════════════════ */
 
+/* ── Page & container ── */
 body, .gradio-container {
     background: #F7F3EA !important;
     font-family: 'Helvetica Neue', Arial, sans-serif !important;
 }
-.gradio-container {
-    max-width: 1080px !important;
-    margin: 0 auto !important;
-}
+.gradio-container { max-width: 1080px !important; margin: 0 auto !important; }
 footer { display: none !important; }
-
 .contain, .gap, .panel { background: transparent !important; }
 
-/* Blocks / cards */
+/* ── Cards / blocks ── */
 .block, .form {
     background: #FFFDF7 !important;
     border: 1px solid #D8D0C3 !important;
     border-radius: 12px !important;
-    box-shadow: 0 1px 6px rgba(38,50,56,0.04) !important;
+    box-shadow: 0 1px 8px rgba(38,50,56,0.05) !important;
 }
 
-/* Labels */
-.block .label-wrap > span, label > span {
-    font-size: 10px !important;
-    font-weight: 600 !important;
-    letter-spacing: 2px !important;
+/* ── Component labels — HIGHER CONTRAST ── */
+.block .label-wrap > span,
+label > span,
+.block label > span,
+fieldset legend {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.8px !important;
     text-transform: uppercase !important;
-    color: #B8B0A3 !important;
+    color: #5A5048 !important;   /* was #B8B0A3 — much more readable */
 }
 
-/* Text inputs */
+/* ── Text inputs / textareas ── */
 textarea, input[type="text"], input[type="number"] {
     background: #FFFDF7 !important;
-    border: 1px solid #D8D0C3 !important;
-    color: #263238 !important;
+    border: 1px solid #D0C8BA !important;
+    color: #1E1A14 !important;
     border-radius: 8px !important;
     font-size: 13px !important;
+    line-height: 1.7 !important;
     transition: border-color 0.15s, box-shadow 0.15s !important;
 }
 textarea:focus, input[type="text"]:focus, input[type="number"]:focus {
     border-color: #C57B57 !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(197,123,87,0.12) !important;
+    box-shadow: 0 0 0 3px rgba(197,123,87,0.13) !important;
 }
 textarea::placeholder, input::placeholder {
-    color: #C8C4BC !important;
+    color: #B8B0A3 !important;
     font-style: italic !important;
 }
 
-/* Dropdown */
+/* ── Dropdown ── */
 .wrap-inner, .multiselect, .wrap {
     background: #FFFDF7 !important;
-    border-color: #D8D0C3 !important;
-    color: #263238 !important;
+    border-color: #D0C8BA !important;
+    color: #1E1A14 !important;
 }
 .token {
     background: #EDE8DF !important;
-    border: 1px solid #D8D0C3 !important;
-    color: #263238 !important;
+    border: 1px solid #D0C8BA !important;
+    color: #1E1A14 !important;
 }
 .list-items, .options {
     background: #FFFDF7 !important;
-    border: 1px solid #D8D0C3 !important;
+    border: 1px solid #D0C8BA !important;
     border-radius: 8px !important;
-    box-shadow: 0 4px 16px rgba(38,50,56,0.08) !important;
+    box-shadow: 0 4px 18px rgba(38,50,56,0.10) !important;
 }
-.item, .list-items li {
-    color: #263238 !important;
-    font-size: 13px !important;
-}
-.item:hover, .item.selected, .list-items li:hover {
-    background: #F2EDE0 !important;
-}
+.item, .list-items li { color: #1E1A14 !important; font-size: 13px !important; }
+.item:hover, .item.selected, .list-items li:hover { background: #F0EAE0 !important; }
 
-/* Checkbox pill chips */
-.checkbox-group { gap: 6px !important; flex-wrap: wrap !important; }
+/* ── Checkbox chips — READABILITY FIX ──────────────────────────────
+   Unselected : very light warm beige  +  dark charcoal text  (high contrast)
+   Hover      : light sage tint        +  dark forest text
+   Selected   : deeper sage            +  white bold text     */
+.checkbox-group {
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    padding: 2px 0 4px !important;
+}
+label.checkbox-label,
 .checkbox-label {
-    background: #F0EBE2 !important;
-    border: 1px solid #D8D0C3 !important;
+    background: #F5F0E8 !important;          /* light warm beige */
+    border: 1.5px solid #C8BCAC !important;  /* warm gray border */
     border-radius: 20px !important;
-    padding: 6px 15px !important;
-    color: #4A4038 !important;
-    font-size: 12px !important;
+    padding: 7px 16px !important;
+    color: #1E1A14 !important;               /* near-black text — high contrast */
+    font-size: 13px !important;              /* slightly larger */
     font-weight: 500 !important;
     cursor: pointer !important;
     transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+    line-height: 1.5 !important;
     margin: 2px !important;
+    white-space: nowrap !important;
+    user-select: none !important;
 }
+label.checkbox-label:hover,
 .checkbox-label:hover {
-    border-color: #8A9A7B !important;
-    background: #E4EDE8 !important;
+    background: #E4EED8 !important;          /* soft sage tint */
+    border-color: #7A9868 !important;
+    color: #162410 !important;
 }
+label.checkbox-label.selected,
 .checkbox-label.selected {
-    background: #8A9A7B !important;
-    border-color: #8A9A7B !important;
-    color: #FFFDF7 !important;
-    box-shadow: 0 1px 4px rgba(138,154,123,0.3) !important;
+    background: #4E7040 !important;          /* deep sage — sufficient contrast with white */
+    border-color: #3C5C30 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12) !important;
 }
+/* Hide checkbox square, keep click area */
+label.checkbox-label input[type="checkbox"],
 .checkbox-label input[type="checkbox"] {
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    width: 0 !important; height: 0 !important;
-    margin: 0 !important; padding: 0 !important;
-    position: absolute !important; opacity: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    width: 1px !important; height: 1px !important;
+    pointer-events: none !important;
 }
 
-/* Slider */
-input[type="range"] { accent-color: #8A9A7B !important; }
+/* ── Slider ── */
+input[type="range"] { accent-color: #6B8A5E !important; }
 
-/* Primary button — terracotta */
+/* ── Primary button — terracotta ── */
 button.primary, .btn-primary {
     background: #C57B57 !important;
     background-image: none !important;
     color: #FFFDF7 !important;
     border: none !important;
     border-radius: 9px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.5px !important;
-    box-shadow: 0 2px 10px rgba(197,123,87,0.28) !important;
-    transition: background 0.2s !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.4px !important;
+    box-shadow: 0 3px 12px rgba(197,123,87,0.32) !important;
+    transition: background 0.2s, box-shadow 0.2s !important;
 }
-button.primary:hover { background: #AD6B47 !important; }
+button.primary:hover {
+    background: #A86540 !important;
+    box-shadow: 0 4px 16px rgba(197,123,87,0.4) !important;
+}
 
-/* Secondary button */
+/* ── Secondary button ── */
 button.secondary {
     background: #FFFDF7 !important;
-    border: 1px solid #D8D0C3 !important;
-    color: #6F6A60 !important;
+    border: 1.5px solid #D0C8BA !important;
+    color: #4A4038 !important;
     border-radius: 9px !important;
-    font-size: 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
 }
 button.secondary:hover {
-    background: #F2EDE0 !important;
-    border-color: #B8B0A3 !important;
+    background: #F0E8DC !important;
+    border-color: #B0A898 !important;
 }
 
-/* Tabs */
+/* ── Example preset cards ── */
+.example-card { flex: 1 !important; min-width: 0 !important; }
+.example-card > .wrap,
+.example-card > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+.example-card button {
+    width: 100% !important;
+    background: #FFFDF7 !important;
+    border: 1.5px solid #D0C8BA !important;
+    border-radius: 12px !important;
+    color: #1E1A14 !important;              /* dark readable text */
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 16px 12px !important;
+    min-height: 64px !important;
+    height: auto !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0.1px !important;
+    box-shadow: 0 1px 4px rgba(38,50,56,0.07) !important;
+    transition: all 0.18s !important;
+    cursor: pointer !important;
+}
+.example-card button:hover {
+    background: #F5EDE2 !important;
+    border-color: #C57B57 !important;
+    color: #7A2E08 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(197,123,87,0.18) !important;
+}
+
+/* ── Tabs ── */
 .tabs { border: none !important; background: transparent !important; }
 .tab-nav {
     background: transparent !important;
-    border-bottom: 1px solid #D8D0C3 !important;
+    border-bottom: 1.5px solid #D0C8BA !important;
     padding: 0 !important;
 }
 .tab-nav button {
     background: transparent !important;
     border: none !important;
-    border-bottom: 2px solid transparent !important;
+    border-bottom: 3px solid transparent !important;
     border-radius: 0 !important;
-    color: #6F6A60 !important;
-    font-size: 12px !important;
+    color: #7A7268 !important;
+    font-size: 13px !important;
     font-weight: 500 !important;
-    letter-spacing: 0.4px !important;
-    padding: 12px 22px !important;
+    padding: 13px 24px !important;
     margin: 0 !important;
     transition: color 0.15s, border-color 0.15s !important;
 }
-.tab-nav button:hover { color: #263238 !important; }
+.tab-nav button:hover { color: #1E1A14 !important; }
 .tab-nav button.selected {
-    color: #263238 !important;
-    font-weight: 600 !important;
+    color: #1E1A14 !important;
+    font-weight: 700 !important;
     border-bottom-color: #C57B57 !important;
 }
-.tabitem { background: transparent !important; border: none !important; padding: 18px 0 0 !important; }
-
-/* Accordion */
-.accordion { border: 1px solid #D8D0C3 !important; border-radius: 10px !important; background: #FFFDF7 !important; }
-.accordion > .label-wrap { border-bottom: 1px solid #D8D0C3 !important; }
-
-/* Examples */
-.examples > .label-wrap > span {
-    font-size: 10px !important; color: #B8B0A3 !important;
-    letter-spacing: 2px !important; text-transform: uppercase !important;
-}
-.examples table { background: transparent !important; border-collapse: separate !important; border-spacing: 0 4px !important; }
-.examples thead { display: none !important; }
-.examples tbody tr {
-    background: #FFFDF7 !important;
-    border: 1px solid #D8D0C3 !important;
-    border-radius: 8px !important;
-    cursor: pointer !important;
-}
-.examples tbody tr:hover { background: #F2EDE0 !important; }
-.examples td {
-    color: #6F6A60 !important;
-    font-size: 12px !important;
+.tabitem {
+    background: transparent !important;
     border: none !important;
-    padding: 8px 14px !important;
-    max-width: 160px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    padding: 20px 0 0 !important;
 }
 
-/* Markdown */
-.prose, .md { color: #263238 !important; }
-.prose h1,.prose h2,.prose h3 { color: #263238 !important; }
-.prose strong { color: #263238 !important; }
-.prose p { color: #3C3830 !important; line-height: 1.85 !important; }
+/* ── Accordion ── */
+.accordion {
+    border: 1px solid #D0C8BA !important;
+    border-radius: 12px !important;
+    background: #FFFDF7 !important;
+    overflow: hidden !important;
+}
+.accordion > .label-wrap {
+    padding: 14px 18px !important;
+    border-bottom: 1px solid #E8E0D4 !important;
+}
+.accordion > .label-wrap span {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #3C3428 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
 
-/* Scrollbar */
+/* ── Markdown output ── */
+.prose, .md { color: #1E1A14 !important; }
+.prose h1, .prose h2, .prose h3 { color: #1E1A14 !important; font-weight: 500 !important; }
+.prose strong { color: #1E1A14 !important; }
+.prose p { color: #2A2620 !important; line-height: 1.9 !important; }
+.prose em { color: #6F6A60 !important; }
+
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #F7F3EA; }
-::-webkit-scrollbar-thumb { background: #D8D0C3; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #D0C8BA; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #B8B0A3; }
 """
 
@@ -965,8 +1011,94 @@ HEADER_HTML = """
 </div>
 """
 
-SECTION_LEFT  = '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#B8B0A3;margin:0 0 6px;font-weight:600;">Space &amp; Mood</p>'
-SECTION_RIGHT = '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#B8B0A3;margin:0 0 6px;font-weight:600;">Programme &amp; Materials</p>'
+def _section_header(title: str) -> str:
+    return (
+        f'<div style="display:flex; align-items:center; gap:12px; margin:0 0 12px;">'
+        f'<span style="font-size:11px; font-weight:700; letter-spacing:2px; '
+        f'text-transform:uppercase; color:#4A3C30; white-space:nowrap; '
+        f'font-family:\'Helvetica Neue\',Arial,sans-serif;">{title}</span>'
+        f'<div style="flex:1; height:1px; background:#D8D0C3; border-radius:1px;"></div>'
+        f'</div>'
+    )
+
+SECTION_LEFT  = _section_header("Space &amp; Mood")
+SECTION_RIGHT = _section_header("Programme &amp; Materials")
+
+BOARD_PLACEHOLDER = """
+<div style="font-family:'Helvetica Neue',Arial,sans-serif; background:#F7F3EA;
+            padding:48px 40px; border-radius:14px; border:1.5px dashed #D0C8BA;
+            text-align:center; color:#8A8278;">
+  <p style="font-size:10px; letter-spacing:4px; text-transform:uppercase;
+            margin:0 0 16px; font-weight:500; color:#C0B8B0;">
+    Interior Concept Board
+  </p>
+  <div style="font-size:40px; margin-bottom:18px; opacity:0.5;">🏛️</div>
+  <p style="font-size:15px; font-family:'Georgia',serif; font-weight:300;
+            color:#9A9288; line-height:1.9; margin:0;">
+    Configure your space above and click<br>
+    <span style="color:#C57B57; font-weight:600;">Generate Concept ✦</span><br>
+    to build your concept board.
+  </p>
+</div>
+"""
+
+PRESET_EXAMPLES = [
+    {
+        "label": "📚  Library · Calm",
+        "sub":   "Wood · Concrete · High Ceiling",
+        "data":  ("Library",
+                  ["Reading", "Learning"],
+                  ["Wood", "Concrete"],
+                  ["Natural Light", "Indirect"],
+                  "Calm",
+                  ["High Ceiling", "Layered"],
+                  "Warm oak shelving, terrazzo floors"),
+    },
+    {
+        "label": "🖼️  Gallery · Minimal",
+        "sub":   "Glass · Concrete · Open",
+        "data":  ("Gallery",
+                  ["Exhibition", "Social"],
+                  ["Glass", "Concrete"],
+                  ["Dramatic", "Accent Lighting"],
+                  "Minimal",
+                  ["Open", "High Ceiling"],
+                  ""),
+    },
+    {
+        "label": "☕  Cafe · Cozy",
+        "sub":   "Wood · Fabric · Brick · Layered",
+        "data":  ("Cafe",
+                  ["Social", "Creative", "Rest"],
+                  ["Wood", "Fabric", "Brick"],
+                  ["Warm", "Indirect"],
+                  "Cozy",
+                  ["Layered", "Flowing"],
+                  "물결 형태 천장, 수제 도자기 타일"),
+    },
+    {
+        "label": "🖥️  Office · Futuristic",
+        "sub":   "Metal · Glass · Flexible",
+        "data":  ("Office",
+                  ["Collaboration", "Learning"],
+                  ["Metal", "Glass"],
+                  ["Natural Light", "Diffused"],
+                  "Futuristic",
+                  ["Flexible", "Open"],
+                  "자연광 생태 벽, 모듈형 파티션"),
+    },
+    {
+        "label": "🤝  Community · Dynamic",
+        "sub":   "Concrete · Wood · Flowing",
+        "data":  ("Community Space",
+                  ["Social", "Exhibition", "Collaboration"],
+                  ["Concrete", "Wood"],
+                  ["Natural Light", "Accent Lighting"],
+                  "Dynamic",
+                  ["Flowing", "High Ceiling"],
+                  "서가 벽면, 커뮤니티 이벤트 존"),
+    },
+]
 
 # ─── Gradio UI ────────────────────────────────────────────────────────────────
 
@@ -1043,68 +1175,52 @@ with gr.Blocks(
             imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768",           label="Image Size")
             seed_in    = gr.Number(value=-1, label="Seed  (−1 = random)", precision=0)
 
-    # ── Examples ─────────────────────────────────────────────────────────────
-    gr.Examples(
-        examples=[
-            ["Library",
-             ["Reading", "Learning"],
-             ["Wood", "Concrete"],
-             ["Natural Light", "Indirect"],
-             "Calm",
-             ["High Ceiling", "Layered"],
-             "Warm oak shelving, terrazzo floors, reading nooks"],
-            ["Gallery",
-             ["Exhibition", "Social"],
-             ["Glass", "Concrete"],
-             ["Dramatic", "Accent Lighting"],
-             "Minimal",
-             ["Open", "High Ceiling"],
-             ""],
-            ["Cafe",
-             ["Social", "Creative", "Rest"],
-             ["Wood", "Fabric", "Brick"],
-             ["Warm", "Indirect"],
-             "Cozy",
-             ["Layered", "Flowing"],
-             "물결 형태 천장, 수제 도자기 타일"],
-            ["Office",
-             ["Collaboration", "Learning"],
-             ["Metal", "Glass"],
-             ["Natural Light", "Diffused"],
-             "Futuristic",
-             ["Flexible", "Open"],
-             "자연광 생태 벽, 높이조절 책상, 모듈형 파티션"],
-            ["Community Space",
-             ["Social", "Exhibition", "Collaboration"],
-             ["Concrete", "Wood"],
-             ["Natural Light", "Accent Lighting"],
-             "Dynamic",
-             ["Flowing", "High Ceiling"],
-             "서가 벽면, 커뮤니티 이벤트 존, 모듈형 가구"],
-        ],
-        inputs=[space_in, activity_in, material_in, lighting_in,
-                mood_in, spatial_in, extra_in],
-        label="Quick Examples",
-    )
+    # ── Quick Examples — card buttons (no table) ─────────────────────────────
+    gr.HTML(_section_header("Quick Examples"))
+    with gr.Row():
+        preset_btns = []
+        for preset in PRESET_EXAMPLES:
+            btn = gr.Button(
+                f"{preset['label']}\n{preset['sub']}",
+                elem_classes=["example-card"],
+                size="sm",
+            )
+            preset_btns.append((btn, preset["data"]))
 
     # ── Output tabs ──────────────────────────────────────────────────────────
+    gr.HTML(_section_header("Results"))
     with gr.Tabs():
-        with gr.TabItem("  📝  English Prompt  "):
-            prompt_out = gr.Textbox(label="Image-generation prompt", lines=5)
-        with gr.TabItem("  🏷️  Tags  "):
-            tags_out = gr.Textbox(label="Hashtags", lines=3)
-        with gr.TabItem("  🇰🇷  Korean Statement  "):
-            korean_out = gr.Markdown()
-        with gr.TabItem("  🎨  Concept Board  "):
+        with gr.TabItem("📝  English Prompt"):
+            prompt_out = gr.Textbox(
+                label="Image-generation prompt",
+                placeholder="Your image-generation prompt will appear here after clicking Generate.",
+                lines=5,
+            )
+        with gr.TabItem("🏷️  Tags"):
+            tags_out = gr.Textbox(
+                label="Hashtags",
+                placeholder="Design hashtags will appear here.",
+                lines=3,
+            )
+        with gr.TabItem("🇰🇷  Korean Statement"):
+            korean_out = gr.Markdown(
+                value="*Select options above and click **Generate Concept** to see the Korean concept statement.*"
+            )
+        with gr.TabItem("🎨  Concept Board"):
             image_out = gr.Image(
                 label="Generated Image  (ComfyUI)",
                 type="pil",
                 visible=False,
                 height=380,
             )
-            board_out = gr.HTML()
+            board_out = gr.HTML(value=BOARD_PLACEHOLDER)
 
     # ── Wire events ──────────────────────────────────────────────────────────
+    preset_outputs = [space_in, activity_in, material_in, lighting_in,
+                      mood_in, spatial_in, extra_in]
+    for btn, data in preset_btns:
+        btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
+
     inputs  = [space_in, activity_in, material_in, lighting_in,
                mood_in, spatial_in, extra_in,
                use_comfyui_in, comfyui_url_in, neg_prompt_in,
