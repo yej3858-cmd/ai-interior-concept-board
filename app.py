@@ -1,404 +1,378 @@
 import gradio as gr
-import random
+import re
 
-# ─── Style Knowledge Base ─────────────────────────────────────────────────────
+# ─── Knowledge Base ───────────────────────────────────────────────────────────
 
-STYLES = {
-    "modern": {
-        "adjectives": ["sleek", "clean-lined", "geometric", "minimalist"],
-        "materials": ["polished concrete", "tempered glass", "brushed steel", "lacquered wood"],
-        "colors_hex": ["#F2F2F0", "#1A1A1A", "#C8B99A", "#8C7B6B", "#E8E4DF"],
-        "color_names": ["Off White", "Charcoal", "Sand", "Mocha", "Linen"],
-        "lighting": "recessed LED strips, slim floor lamps with metal shades",
-        "ko_style": "모던",
-        "ko_desc": "직선과 기하학적 형태를 강조한 세련되고 깔끔한 스타일",
+SPACE_TYPES = {
+    "Library": {
+        "ko": "도서관",
+        "en_char": "knowledge-rich, contemplative, archival",
+        "ko_intro": "지식과 사색이 공존하는",
+        "img_labels": ["Reading Alcove", "Book Wall", "Study Nook"],
+        "img_icons":  ["📚", "🗂️", "🔭"],
     },
-    "scandinavian": {
-        "adjectives": ["hygge", "cozy", "functional", "natural", "serene"],
-        "materials": ["light oak", "white-painted wood", "wool textiles", "ceramic", "rattan"],
-        "colors_hex": ["#FFFFFF", "#E8E2D9", "#C4D4C8", "#9EB5A3", "#4A5E52"],
-        "color_names": ["Pure White", "Warm Ivory", "Sage Mist", "Forest Sage", "Deep Pine"],
-        "lighting": "diffused pendant lights, candlelight, soft natural light",
-        "ko_style": "스칸디나비안",
-        "ko_desc": "자연 소재와 따뜻한 색감으로 아늑함과 기능성을 동시에 추구하는 북유럽 스타일",
+    "Lounge": {
+        "ko": "라운지",
+        "en_char": "relaxed, social, comfortable",
+        "ko_intro": "편안한 휴식과 교류가 이루어지는",
+        "img_labels": ["Social Seating", "Relaxation Zone", "Feature Corner"],
+        "img_icons":  ["🛋️", "☕", "🪴"],
     },
-    "industrial": {
-        "adjectives": ["raw", "urban", "edgy", "exposed", "vintage"],
-        "materials": ["exposed brick", "raw steel", "reclaimed wood", "concrete", "leather"],
-        "colors_hex": ["#3C3C3C", "#6B5B4E", "#A89070", "#C4B8A8", "#F0EDE8"],
-        "color_names": ["Iron", "Rust Brown", "Aged Bronze", "Stone", "Chalk"],
-        "lighting": "Edison bulb pendants, pipe-style wall fixtures, cage sconces",
-        "ko_style": "인더스트리얼",
-        "ko_desc": "날것의 소재와 도시적인 감성이 어우러진 거친 매력의 스타일",
+    "Gallery": {
+        "ko": "갤러리",
+        "en_char": "curated, light-focused, contemplative",
+        "ko_intro": "예술과 감상이 만나는",
+        "img_labels": ["Exhibition Wall", "Display Zone", "Gallery Walk"],
+        "img_icons":  ["🖼️", "💡", "🎨"],
     },
-    "bohemian": {
-        "adjectives": ["eclectic", "layered", "artistic", "free-spirited", "colorful"],
-        "materials": ["macramé", "woven textiles", "terracotta", "rattan", "vintage fabric"],
-        "colors_hex": ["#C17B3E", "#8B4513", "#D4956A", "#6B8E6E", "#9370DB"],
-        "color_names": ["Burnt Sienna", "Saddle Brown", "Terracotta", "Sage", "Lavender"],
-        "lighting": "fairy lights, Moroccan lanterns, pillar candles",
-        "ko_style": "보헤미안",
-        "ko_desc": "다양한 문화와 예술적 감각이 자유롭게 어우러진 에클렉틱한 스타일",
+    "Cafe": {
+        "ko": "카페",
+        "en_char": "warm, community-oriented, sensory",
+        "ko_intro": "따뜻한 커뮤니티 감성이 흐르는",
+        "img_labels": ["Seating Area", "Counter Detail", "Ambient Corner"],
+        "img_icons":  ["☕", "🌿", "🕯️"],
     },
-    "japanese": {
-        "adjectives": ["wabi-sabi", "zen", "serene", "natural", "timeless"],
-        "materials": ["bamboo", "shoji paper", "tatami", "natural stone", "hand-thrown ceramics"],
-        "colors_hex": ["#F5F0E8", "#8B7355", "#5C7A5C", "#2F4F2F", "#C8B89A"],
-        "color_names": ["Washi White", "Teak", "Bamboo Green", "Pine", "Rice Paper"],
-        "lighting": "washi paper lanterns, indirect cove lighting, filtered natural light",
-        "ko_style": "재패니즈 젠",
-        "ko_desc": "자연과의 조화 속에서 고요함과 단순미를 추구하는 일본식 선(禪) 스타일",
+    "Office": {
+        "ko": "오피스",
+        "en_char": "focused, productive, professional",
+        "ko_intro": "생산성과 창의성이 공존하는",
+        "img_labels": ["Work Zone", "Collaboration Hub", "Focus Area"],
+        "img_icons":  ["🖥️", "📐", "🌱"],
     },
-    "luxury": {
-        "adjectives": ["opulent", "sophisticated", "refined", "grand", "timeless"],
-        "materials": ["Calacatta marble", "velvet", "antique brass", "mirrored surfaces", "silk"],
-        "colors_hex": ["#1C1C1C", "#B8960C", "#F5ECD7", "#8B7355", "#E8D5B5"],
-        "color_names": ["Ebony", "Antique Gold", "Champagne", "Bronze", "Cream"],
-        "lighting": "crystal chandeliers, brass wall sconces, curated accent lighting",
-        "ko_style": "럭셔리",
-        "ko_desc": "고급 소재와 정교한 디테일로 완성하는 품격 있는 럭셔리 스타일",
+    "Learning Space": {
+        "ko": "러닝 스페이스",
+        "en_char": "stimulating, structured, adaptive",
+        "ko_intro": "배움과 성장이 일어나는",
+        "img_labels": ["Teaching Area", "Workshop Zone", "Breakout Space"],
+        "img_icons":  ["🎓", "🔬", "💡"],
     },
-    "coastal": {
-        "adjectives": ["breezy", "relaxed", "nautical", "sun-drenched", "casual"],
-        "materials": ["whitewashed wood", "linen", "jute", "sea glass", "driftwood"],
-        "colors_hex": ["#FFFFFF", "#87CEEB", "#4682B4", "#F5DEB3", "#708090"],
-        "color_names": ["White Sand", "Sky Blue", "Ocean Blue", "Wheat", "Sea Fog"],
-        "lighting": "abundant natural light, rattan pendants, weathered lanterns",
-        "ko_style": "코스탈",
-        "ko_desc": "바다의 시원함과 자연스러운 여유로움이 느껴지는 해변 감성 스타일",
-    },
-    "rustic": {
-        "adjectives": ["warm", "earthy", "textured", "handcrafted", "inviting"],
-        "materials": ["reclaimed wood", "fieldstone", "wrought iron", "chunky wool", "aged leather"],
-        "colors_hex": ["#8B4513", "#A0785A", "#C4A882", "#E8D5B0", "#6B8E23"],
-        "color_names": ["Chestnut", "Caramel", "Burlap", "Parchment", "Olive"],
-        "lighting": "Edison filament bulbs, antler chandeliers, firelight",
-        "ko_style": "러스틱",
-        "ko_desc": "자연 소재의 질감과 따뜻한 색조로 포근하고 정겨운 감성을 자아내는 스타일",
+    "Community Space": {
+        "ko": "커뮤니티 스페이스",
+        "en_char": "inclusive, flexible, vibrant",
+        "ko_intro": "다양한 만남과 활동이 공존하는",
+        "img_labels": ["Gathering Area", "Event Zone", "Social Hub"],
+        "img_icons":  ["🤝", "🎪", "🌐"],
     },
 }
 
-ROOMS = {
-    "bedroom": {
-        "ko": "침실",
-        "desc": "A restful sanctuary layered with soft textiles and calming illumination",
-        "icons": ["🛏️", "🕯️", "🪞"],
-    },
-    "living room": {
-        "ko": "거실",
-        "desc": "An inviting gathering space anchored by comfortable seating and curated objects",
-        "icons": ["🛋️", "🪴", "📚"],
-    },
-    "kitchen": {
-        "ko": "주방",
-        "desc": "A functional culinary space balancing form and everyday practicality",
-        "icons": ["🍳", "🌿", "☕"],
-    },
-    "bathroom": {
-        "ko": "욕실",
-        "desc": "A spa-inspired retreat elevated by premium finishes and serene details",
-        "icons": ["🛁", "🪴", "🕯️"],
-    },
-    "office": {
-        "ko": "홈 오피스",
-        "desc": "A focused workspace designed to inspire productivity and creative thought",
-        "icons": ["🖥️", "📐", "🌱"],
-    },
-    "dining room": {
-        "ko": "다이닝룸",
-        "desc": "An elegant entertaining space set for memorable shared meals",
-        "icons": ["🕯️", "🍽️", "🌸"],
-    },
+MATERIAL_DATA = {
+    "Wood":     {"hex": "#A0784A", "light": "#C9A87A", "ko": "목재",    "finish": "warm grain texture"},
+    "Concrete": {"hex": "#8E8E82", "light": "#B8B8AE", "ko": "콘크리트", "finish": "raw poured finish"},
+    "Glass":    {"hex": "#90B8C0", "light": "#B8D4D8", "ko": "유리",    "finish": "clear / frosted"},
+    "Fabric":   {"hex": "#C4A882", "light": "#DCC8A8", "ko": "패브릭",  "finish": "soft woven textile"},
+    "Metal":    {"hex": "#8A8A96", "light": "#B4B4C0", "ko": "금속",    "finish": "brushed matte finish"},
+    "Stone":    {"hex": "#9E8C7A", "light": "#C0B0A0", "ko": "석재",    "finish": "honed natural surface"},
+    "Brick":    {"hex": "#B46040", "light": "#D4906A", "ko": "벽돌",   "finish": "exposed rough texture"},
 }
 
-MOODS = {
-    "calm":       {"en": "serene and calming",      "ko": "고요하고 평온한"},
-    "energetic":  {"en": "vibrant and energizing",  "ko": "활기차고 생동감 있는"},
-    "romantic":   {"en": "warm and romantic",        "ko": "따뜻하고 로맨틱한"},
-    "productive": {"en": "focused and productive",   "ko": "집중력을 높이는"},
-    "cozy":       {"en": "cozy and intimate",        "ko": "아늑하고 포근한"},
-    "fresh":      {"en": "fresh and airy",           "ko": "신선하고 시원한"},
-    "elegant":    {"en": "refined and elegant",      "ko": "우아하고 세련된"},
-    "playful":    {"en": "playful and expressive",   "ko": "개성 넘치고 표현적인"},
+MOOD_DATA = {
+    "Calm":       {"ko": "차분한",       "en_adj": "serene, tranquil, quietly composed",  "board_bg": "#F0ECE4"},
+    "Minimal":    {"ko": "미니멀한",     "en_adj": "restrained, precise, uncluttered",    "board_bg": "#F5F4F0"},
+    "Futuristic": {"ko": "미래지향적인", "en_adj": "forward-looking, innovative, sleek",  "board_bg": "#EAEEf4"},
+    "Cozy":       {"ko": "아늑한",       "en_adj": "warm, inviting, intimate",            "board_bg": "#F5EDE0"},
+    "Elegant":    {"ko": "우아한",       "en_adj": "refined, sophisticated, graceful",    "board_bg": "#EEEAE2"},
+    "Dynamic":    {"ko": "역동적인",     "en_adj": "energetic, bold, expressive",         "board_bg": "#EAF0F0"},
+    "Immersive":  {"ko": "몰입감 있는",  "en_adj": "atmospheric, enveloping, layered",    "board_bg": "#E8E4E0"},
 }
 
-STYLE_ALIASES = {
-    "minimalist": "modern", "minimal": "modern",
-    "nordic": "scandinavian", "scandi": "scandinavian", "hygge": "scandinavian",
-    "zen": "japanese", "japandi": "japanese", "wabi": "japanese",
-    "boho": "bohemian", "eclectic": "bohemian",
-    "glam": "luxury", "opulent": "luxury",
-    "beach": "coastal", "nautical": "coastal",
-    "farmhouse": "rustic", "cottage": "rustic",
-    "urban": "industrial", "loft": "industrial",
+LIGHTING_DATA = {
+    "Natural Light":   {"ko": "자연 채광",     "desc": "floor-to-ceiling glazing and skylights"},
+    "Warm":            {"ko": "따뜻한 조명",   "desc": "warm-toned incandescent and LED sources"},
+    "Indirect":        {"ko": "간접 조명",     "desc": "cove lighting and diffused wall washing"},
+    "Dramatic":        {"ko": "드라마틱 조명", "desc": "high-contrast spotlighting with deep shadows"},
+    "Diffused":        {"ko": "확산 조명",     "desc": "soft even illumination, glare-free"},
+    "Accent Lighting": {"ko": "포인트 조명",   "desc": "directional accent and display spotlights"},
 }
 
-ROOM_ALIASES = {
-    "bed": "bedroom", "sleep": "bedroom",
-    "living": "living room", "lounge": "living room", "sitting": "living room",
-    "bath": "bathroom", "toilet": "bathroom",
-    "work": "office", "study": "office", "workspace": "office",
-    "dining": "dining room", "dinner": "dining room",
-    "cook": "kitchen",
+ACTIVITY_DATA = {
+    "Reading":       {"ko": "독서",  "desc": "focused individual reading"},
+    "Social":        {"ko": "소셜",  "desc": "casual social interaction"},
+    "Creative":      {"ko": "창작",  "desc": "hands-on creative work"},
+    "Rest":          {"ko": "휴식",  "desc": "quiet rest and reflection"},
+    "Learning":      {"ko": "학습",  "desc": "structured learning and study"},
+    "Exhibition":    {"ko": "전시",  "desc": "curated display and exhibition"},
+    "Collaboration": {"ko": "협업",  "desc": "group collaboration and teamwork"},
 }
 
-# ─── Keyword Detection ────────────────────────────────────────────────────────
+SPATIAL_DATA = {
+    "Open":         {"ko": "개방형",    "desc": "expansive open-plan layout"},
+    "Layered":      {"ko": "레이어드",  "desc": "layered spatial zones and levels"},
+    "High Ceiling": {"ko": "높은 천장", "desc": "voluminous high-ceiling atmosphere"},
+    "Compact":      {"ko": "컴팩트",    "desc": "intimate compact arrangement"},
+    "Flexible":     {"ko": "유연한",    "desc": "adaptable multi-use configuration"},
+    "Enclosed":     {"ko": "폐쇄형",    "desc": "defined enclosed spatial volumes"},
+    "Flowing":      {"ko": "유동적인",  "desc": "fluid, continuous spatial transitions"},
+}
 
-def detect_keywords(keywords: str):
-    kw = keywords.lower()
-    words = kw.split()
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    detected_style = "modern"
-    for word in words:
-        if word in STYLE_ALIASES:
-            detected_style = STYLE_ALIASES[word]
-            break
-        if word in STYLES:
-            detected_style = word
-            break
-
-    detected_room = "living room"
-    for word in words:
-        if word in ROOM_ALIASES:
-            detected_room = ROOM_ALIASES[word]
-            break
-        for room in ROOMS:
-            if room in kw:
-                detected_room = room
-                break
-
-    detected_mood = "calm"
-    for word in words:
-        if word in MOODS:
-            detected_mood = word
-            break
-
-    stop = set(list(STYLES) + list(STYLE_ALIASES) + list(ROOMS) + list(ROOM_ALIASES)
-               + list(MOODS) + ["room", "the", "and", "with", "for", "in", "a", "an"])
-    extra = [w for w in words if w not in stop and len(w) > 3][:3]
-
-    return detected_style, detected_room, detected_mood, extra
-
-# ─── Output Generators ───────────────────────────────────────────────────────
-
-def generate_english_prompt(style_data, style_name, room, mood_data, extra_terms):
-    adj = random.sample(style_data["adjectives"], min(3, len(style_data["adjectives"])))
-    mats = random.sample(style_data["materials"], min(3, len(style_data["materials"])))
-    extra_str = f", {', '.join(extra_terms)}" if extra_terms else ""
-    return (
-        f"A {mood_data['en']} {style_name} {room}, showcasing {', '.join(adj)} design "
-        f"with {', '.join(mats)}{extra_str}. {style_data['lighting'].capitalize()}. "
-        f"Interior design photography, professionally staged, editorial quality, "
-        f"high-end {room.replace(' ', '_')} design concept."
-    )
-
-
-def generate_tags(style_name, room, mood, extra_terms):
-    room_tag = room.replace(" ", "")
-    style_tag = style_name.replace(" ", "")
-    tags = [
-        f"#{style_tag}", f"#{room_tag}", f"#interiordesign", f"#homedecor",
-        f"#conceptboard", f"#moodboard", f"#designinspiration",
-        f"#{mood}vibes", f"#interiors", f"#homedesign",
-    ]
-    tags += [f"#{t}" for t in extra_terms]
-    return "  ".join(tags)
-
-
-def generate_korean_statement(style_data, room_data, mood_data, extra_terms):
-    extra_ko = f" '{', '.join(extra_terms)}' 요소를 가미하여" if extra_terms else ""
-    return (
-        f"### {style_data['ko_style']} {room_data['ko']} 콘셉트\n\n"
-        f"{style_data['ko_desc']}.\n\n"
-        f"이 공간은 **{mood_data['ko']}** 분위기를 핵심 키워드로{extra_ko}, "
-        f"소재와 컬러 팔레트가 섬세하게 큐레이션된 {room_data['ko']} 디자인을 제안합니다. "
-        f"일상의 공간에 디자인의 가치를 더해 매일을 특별하게 만드는 "
-        f"인테리어 경험을 목표로 합니다.\n\n"
-        f"**핵심 가치:** 기능성 &nbsp;·&nbsp; 심미성 &nbsp;·&nbsp; 지속가능성"
-    )
-
-# ─── HTML Concept Board ───────────────────────────────────────────────────────
-
-def _luminance(hex_color: str) -> float:
-    r = int(hex_color[1:3], 16)
-    g = int(hex_color[3:5], 16)
-    b = int(hex_color[5:7], 16)
+def _luminance(h: str) -> float:
+    r, g, b = int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16)
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255
 
+def _text_on(h: str) -> str:
+    return "#1C1A16" if _luminance(h) > 0.45 else "#F5F2EC"
 
-def _text_on(hex_color: str) -> str:
-    return "#1A1A1A" if _luminance(hex_color) > 0.45 else "#F5F2EE"
+def _md_bold_to_html(text: str) -> str:
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
 
+# ─── Output Builders ──────────────────────────────────────────────────────────
 
-def _lighten(hex_color: str, amount: int = 30) -> str:
-    r = min(255, int(hex_color[1:3], 16) + amount)
-    g = min(255, int(hex_color[3:5], 16) + amount)
-    b = min(255, int(hex_color[5:7], 16) + amount)
-    return f"#{r:02X}{g:02X}{b:02X}"
-
-
-def _placeholder_tile(label: str, icon: str, color: str, height: str = "180px") -> str:
-    lighter = _lighten(color, 35)
-    text = _text_on(color)
+def build_english_prompt(space, activities, materials, lighting, mood, spatial, extra):
+    sp  = SPACE_TYPES[space]
+    md  = MOOD_DATA[mood]
+    mat = ", ".join(m.lower() for m in materials)         if materials  else "mixed materials"
+    lit = ", ".join(LIGHTING_DATA[l]["desc"] for l in lighting) if lighting  else "balanced lighting"
+    spt = ", ".join(SPATIAL_DATA[s]["desc"]  for s in spatial)  if spatial   else "open plan"
+    act = ", ".join(a.lower() for a in activities)        if activities else "multipurpose"
+    ext = f" {extra.strip()}" if extra and extra.strip() else ""
     return (
-        f'<div style="height:{height}; background:linear-gradient(135deg,{color},{lighter}); '
-        f'border-radius:10px; display:flex; flex-direction:column; align-items:center; '
-        f'justify-content:center; gap:8px;">'
-        f'<span style="font-size:32px;">{icon}</span>'
-        f'<span style="font-size:12px; font-weight:600; color:{text}; opacity:0.85; '
-        f'text-align:center; padding:0 12px;">{label}</span>'
+        f"A {md['en_adj']} {space.lower()}, {sp['en_char']}. "
+        f"Spatial quality: {spt}. "
+        f"Primary materials: {mat}. "
+        f"Lighting: {lit}. "
+        f"Programmed for {act}.{ext} "
+        f"High-end interior design photography, professional architectural staging, "
+        f"editorial portfolio quality."
+    )
+
+
+def build_tags(space, activities, materials, lighting, mood, spatial):
+    parts = (
+        [f"#{space.replace(' ', '')}"]
+        + [f"#{a.lower()}"                        for a in activities]
+        + [f"#{m.lower()}"                        for m in materials]
+        + [f"#{l.replace(' ', '').lower()}"       for l in lighting]
+        + [f"#{mood.lower()}design"]
+        + [f"#{s.replace(' ', '').lower()}"       for s in spatial]
+        + ["#interiordesign", "#conceptboard", "#spacedesign", "#designinspiration"]
+    )
+    return "  ".join(parts)
+
+
+def build_korean(space, activities, materials, lighting, mood, spatial, extra):
+    sp     = SPACE_TYPES[space]
+    md     = MOOD_DATA[mood]
+    mat_ko = " · ".join(MATERIAL_DATA[m]["ko"]  for m in materials)  if materials  else "복합 소재"
+    act_ko = " · ".join(ACTIVITY_DATA[a]["ko"]  for a in activities) if activities else "다목적"
+    spt_ko = " · ".join(SPATIAL_DATA[s]["ko"]   for s in spatial)    if spatial    else "개방형"
+    lit_ko = " · ".join(LIGHTING_DATA[l]["ko"]  for l in lighting)   if lighting   else "균형 조명"
+    ext    = f" {extra.strip()}" if extra and extra.strip() else ""
+    return (
+        f"{sp['ko_intro']} **{sp['ko']}**은 **{md['ko']}** 분위기를 중심으로 "
+        f"{mat_ko} 소재와 {lit_ko}을 통해 공간의 정체성을 형성합니다. "
+        f"{spt_ko} 공간 구성 속에서 {act_ko} 활동을 지원하며, "
+        f"사용자에게 목적과 감성이 공존하는 경험을 제공합니다.{ext}"
+    )
+
+# ─── HTML Concept Board Components ───────────────────────────────────────────
+
+def _img_tile(label: str, icon: str, col: str, light: str, height: str = "100%") -> str:
+    text = _text_on(col)
+    return (
+        f'<div style="background:linear-gradient(145deg,{col},{light}); border-radius:10px;'
+        f' height:{height}; min-height:130px; display:flex; flex-direction:column;'
+        f' align-items:center; justify-content:center; gap:10px;">'
+        f'<span style="font-size:34px;">{icon}</span>'
+        f'<span style="font-size:10px; font-weight:700; letter-spacing:1.5px;'
+        f' text-transform:uppercase; color:{text}; opacity:0.75;'
+        f' text-align:center; padding:0 14px;">{label}</span>'
         f'</div>'
     )
 
 
-def _swatch(hex_color: str, name: str) -> str:
-    text = _text_on(hex_color)
+def _material_block(name: str) -> str:
+    d    = MATERIAL_DATA[name]
+    text = _text_on(d["hex"])
     return (
-        f'<div style="display:flex; flex-direction:column; align-items:center; gap:5px;">'
-        f'<div style="width:64px; height:64px; border-radius:50%; background:{hex_color}; '
-        f'border:2px solid rgba(0,0,0,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.12);"></div>'
-        f'<span style="font-size:11px; font-weight:500; color:#555; text-align:center;">{name}</span>'
-        f'<span style="font-size:10px; color:#999; font-family:monospace;">{hex_color}</span>'
+        f'<div style="flex:1; min-width:76px;">'
+        f'<div style="height:52px; background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
+        f' border-radius:8px; margin-bottom:6px; position:relative;">'
+        f'<span style="position:absolute; bottom:5px; left:8px; font-size:9px;'
+        f' font-weight:700; letter-spacing:1px; text-transform:uppercase;'
+        f' color:{text}; opacity:0.7;">{name.upper()}</span>'
+        f'</div>'
+        f'<div style="font-size:11px; color:#5A5650; font-weight:500;">{d["ko"]}</div>'
+        f'<div style="font-size:10px; color:#9E9A94; margin-top:2px;">{d["finish"]}</div>'
         f'</div>'
     )
 
 
-def generate_concept_board_html(style_name, style_data, room, room_data, mood_data, extra_terms, prompt):
-    colors = style_data["colors_hex"]
-    bg      = colors[0]
-    accent  = colors[3] if len(colors) > 3 else colors[-1]
-    text_m  = _text_on(bg)
-    text_s  = "#666" if _luminance(bg) > 0.45 else "#BBB"
-    panel   = "rgba(255,255,255,0.28)" if _luminance(bg) > 0.45 else "rgba(0,0,0,0.18)"
-
-    icons = room_data["icons"]
-    tiles = [
-        _placeholder_tile(f"{style_name.title()} {room.title()}", icons[0],
-                          colors[1] if len(colors) > 1 else colors[0]),
-        _placeholder_tile("Materials & Textures", icons[1] if len(icons) > 1 else "🪵",
-                          colors[2] if len(colors) > 2 else colors[0]),
-        _placeholder_tile("Lighting Concept", icons[2] if len(icons) > 2 else "💡",
-                          colors[3] if len(colors) > 3 else colors[0]),
-        _placeholder_tile("Detail & Finish", "✨",
-                          colors[4] if len(colors) > 4 else colors[0]),
-    ]
-
-    swatches_html = "".join(_swatch(h, n)
-                            for h, n in zip(style_data["colors_hex"], style_data["color_names"]))
-
-    material_tags = "".join(
-        f'<span style="display:inline-block; padding:5px 13px; margin:4px; '
-        f'background:rgba(0,0,0,0.07); border-radius:20px; font-size:12px; color:{text_s};">'
-        f'{m}</span>'
-        for m in style_data["materials"]
+def _chip(label: str, bg: str = "#EDE8DF", fg: str = "#4A4640") -> str:
+    return (
+        f'<span style="display:inline-block; padding:5px 13px; margin:3px;'
+        f' background:{bg}; border-radius:20px; font-size:11px;'
+        f' font-weight:500; color:{fg}; letter-spacing:0.2px;">{label}</span>'
     )
+
+
+def build_html_board(space, activities, materials, lighting, mood, spatial, extra, prompt):
+    sp  = SPACE_TYPES[space]
+    md  = MOOD_DATA[mood]
+    bg  = md["board_bg"]
+
+    first_mat   = materials[0] if materials else "Wood"
+    accent      = MATERIAL_DATA[first_mat]["hex"]
+    accent_l    = MATERIAL_DATA[first_mat]["light"]
+
+    # Pad material list to at least 3 for the image tiles
+    mat_list = (materials or ["Wood", "Concrete", "Stone"])
+    tile_mats = (mat_list * 3)[:3]
+
+    hero_tile = _img_tile(
+        sp["img_labels"][0], sp["img_icons"][0],
+        MATERIAL_DATA[tile_mats[0]]["hex"], MATERIAL_DATA[tile_mats[0]]["light"],
+    )
+    mid_tile = _img_tile(
+        sp["img_labels"][1], sp["img_icons"][1],
+        MATERIAL_DATA[tile_mats[1]]["hex"], MATERIAL_DATA[tile_mats[1]]["light"],
+    )
+    bot_tile = _img_tile(
+        sp["img_labels"][2], sp["img_icons"][2],
+        MATERIAL_DATA[tile_mats[2]]["hex"], MATERIAL_DATA[tile_mats[2]]["light"],
+    )
+
+    mat_blocks = "".join(_material_block(m) for m in (materials or ["Wood"]))
+
+    act_chips = "".join(_chip(a, "#EEE8DF", "#4A4640") for a in activities) or _chip("—", "#F5F2EE", "#AAA")
+    lit_chips = "".join(_chip(l, "#EAE4DC", "#4A3C36") for l in lighting)  or _chip("—", "#F5F2EE", "#AAA")
+    spa_chips = "".join(_chip(s, "#E4EAE8", "#384A46") for s in spatial)   or _chip("—", "#F5F2EE", "#AAA")
+
+    ko_html  = _md_bold_to_html(build_korean(space, activities, materials, lighting, mood, spatial, extra))
+
+    tags_str  = build_tags(space, activities, materials, lighting, mood, spatial)
+    tag_chips = "".join(_chip(t, "#F0EBE3", "#6B5E54") for t in tags_str.split("  "))
 
     return f"""
 <div style="font-family:'Helvetica Neue',Arial,sans-serif; background:{bg};
-            padding:32px; border-radius:16px; color:{text_m}; max-width:860px; margin:0 auto;">
+            padding:40px; border-radius:18px; max-width:900px; margin:0 auto;
+            box-sizing:border-box; color:#1C1A16;">
 
-  <!-- Header -->
-  <div style="text-align:center; margin-bottom:28px; padding-bottom:22px;
-              border-bottom:1px solid rgba(0,0,0,0.1);">
-    <p style="font-size:10px; letter-spacing:3px; text-transform:uppercase;
-              color:{text_s}; margin:0 0 6px;">Interior Concept Board</p>
-    <h1 style="font-size:30px; font-weight:700; margin:0 0 6px; color:{text_m};">
-      {style_data['ko_style']} {room_data['ko']}
+  <!-- ── Header ── -->
+  <div style="margin-bottom:32px;">
+    <p style="font-size:10px; letter-spacing:3.5px; text-transform:uppercase;
+              color:#9E9A94; margin:0 0 10px;">Interior Concept Board &nbsp;·&nbsp; {space}</p>
+    <h1 style="font-size:28px; font-weight:700; letter-spacing:-0.5px;
+               margin:0 0 6px; color:#1C1A16;">
+      {sp['ko']} <span style="color:{accent};">·</span> {mood}
     </h1>
-    <h2 style="font-size:16px; font-weight:400; color:{text_s}; margin:0 0 10px;">
-      {style_name.title()} {room.title()} &nbsp;·&nbsp; {mood_data['en'].title()}
-    </h2>
-    <p style="font-size:12px; color:{text_s}; max-width:560px; margin:0 auto; line-height:1.65;">
-      {room_data['desc']}
+    <p style="font-size:14px; color:#6B6860; margin:0; line-height:1.6;">
+      {sp['en_char'].replace(',', ' &nbsp;·&nbsp;')}
     </p>
+    <div style="width:44px; height:3px; background:{accent};
+                border-radius:2px; margin-top:16px;"></div>
   </div>
 
-  <!-- 2×2 Image Grid -->
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:22px;">
-    {tiles[0]}{tiles[1]}{tiles[2]}{tiles[3]}
+  <!-- ── Image Grid: hero left + 2 stacked right ── -->
+  <div style="display:grid; grid-template-columns:1.6fr 1fr;
+              grid-template-rows:1fr 1fr; gap:12px; margin-bottom:26px;
+              min-height:300px;">
+    <div style="grid-column:1; grid-row:1/3;">{hero_tile}</div>
+    <div style="grid-column:2; grid-row:1;">{mid_tile}</div>
+    <div style="grid-column:2; grid-row:2;">{bot_tile}</div>
   </div>
 
-  <!-- Color Palette -->
-  <div style="background:{panel}; border-radius:12px; padding:20px; margin-bottom:16px;">
-    <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
-              color:{text_s}; margin:0 0 14px;">Color Palette</p>
-    <div style="display:flex; gap:18px; flex-wrap:wrap; justify-content:center;">
-      {swatches_html}
+  <!-- ── Material Palette ── -->
+  <div style="background:#FFFFFF; border-radius:12px; padding:22px;
+              margin-bottom:14px; border:1px solid #E8E2D8;">
+    <p style="font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+              color:#9E9A94; margin:0 0 16px;">Material Palette</p>
+    <div style="display:flex; gap:14px; flex-wrap:wrap;">{mat_blocks}</div>
+  </div>
+
+  <!-- ── Design Specs ── -->
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr;
+              gap:12px; margin-bottom:14px;">
+
+    <div style="background:#FFFFFF; border-radius:12px; padding:18px;
+                border:1px solid #E8E2D8;">
+      <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
+                color:#9E9A94; margin:0 0 10px;">UX Activity</p>
+      <div>{act_chips}</div>
+    </div>
+
+    <div style="background:#FFFFFF; border-radius:12px; padding:18px;
+                border:1px solid #E8E2D8;">
+      <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
+                color:#9E9A94; margin:0 0 10px;">Lighting</p>
+      <div>{lit_chips}</div>
+    </div>
+
+    <div style="background:#FFFFFF; border-radius:12px; padding:18px;
+                border:1px solid #E8E2D8;">
+      <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
+                color:#9E9A94; margin:0 0 10px;">Spatial Quality</p>
+      <div>{spa_chips}</div>
     </div>
   </div>
 
-  <!-- Materials -->
-  <div style="background:{panel}; border-radius:12px; padding:20px; margin-bottom:16px;">
-    <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
-              color:{text_s}; margin:0 0 10px;">Materials & Finishes</p>
-    <div>{material_tags}</div>
-  </div>
-
-  <!-- Lighting -->
-  <div style="background:{panel}; border-radius:12px; padding:20px; margin-bottom:16px;">
-    <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
-              color:{text_s}; margin:0 0 8px;">Lighting & Atmosphere</p>
-    <p style="font-size:13px; color:{text_s}; margin:0; line-height:1.65;">
-      {style_data['lighting'].capitalize()}
-    </p>
-  </div>
-
-  <!-- Prompt Preview -->
-  <div style="background:rgba(0,0,0,0.06); border-radius:12px; padding:20px;
+  <!-- ── Korean Concept Statement ── -->
+  <div style="background:#FFFFFF; border-radius:12px; padding:22px;
+              margin-bottom:14px; border:1px solid #E8E2D8;
               border-left:4px solid {accent};">
-    <p style="font-size:10px; letter-spacing:2px; text-transform:uppercase;
-              color:{text_s}; margin:0 0 8px;">Design Prompt</p>
-    <p style="font-size:12px; color:{text_s}; margin:0; line-height:1.75; font-style:italic;">
-      &ldquo;{prompt}&rdquo;
+    <p style="font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+              color:#9E9A94; margin:0 0 10px;">개념 설명 · Concept Statement</p>
+    <p style="font-size:14px; color:#3C3830; line-height:1.9; margin:0;">
+      {ko_html}
     </p>
   </div>
 
-  <!-- Footer -->
-  <div style="text-align:center; margin-top:22px; padding-top:16px;
-              border-top:1px solid rgba(0,0,0,0.08);">
-    <p style="font-size:10px; color:{text_s}; letter-spacing:2px;
-              text-transform:uppercase; margin:0;">
-      AI Interior Concept Board Generator
-    </p>
+  <!-- ── Tags ── -->
+  <div style="background:#FFFFFF; border-radius:12px; padding:18px;
+              margin-bottom:14px; border:1px solid #E8E2D8;">
+    <p style="font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+              color:#9E9A94; margin:0 0 10px;">Tags</p>
+    <div>{tag_chips}</div>
+  </div>
+
+  <!-- ── Prompt Reference ── -->
+  <div style="background:rgba(0,0,0,0.03); border-radius:12px; padding:18px;
+              border:1px solid #E8E2D8;">
+    <p style="font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+              color:#9E9A94; margin:0 0 8px;">Image Prompt Reference</p>
+    <p style="font-size:12px; color:#6B6860; margin:0; line-height:1.8;
+              font-style:italic;">&ldquo;{prompt}&rdquo;</p>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div style="text-align:center; margin-top:28px; padding-top:18px;
+              border-top:1px solid #E0DCD4;">
+    <p style="font-size:9px; letter-spacing:3px; text-transform:uppercase;
+              color:#B8B4AE; margin:0;">AI Interior Concept Board Generator</p>
   </div>
 
 </div>
 """
 
-# ─── Main Function ────────────────────────────────────────────────────────────
+# ─── Main Orchestrator ────────────────────────────────────────────────────────
 
-def generate_concept(keywords: str):
-    if not keywords.strip():
-        empty = "<p style='color:#888; font-family:sans-serif;'>Enter keywords above and click <strong>Generate</strong>.</p>"
-        return "", "", "", empty
+def generate_concept(space, activities, materials, lighting, mood, spatial, extra):
+    space  = space or "Library"
+    mood   = mood  or "Calm"
+    activities = activities or []
+    materials  = materials  or []
+    lighting   = lighting   or []
+    spatial    = spatial    or []
+    extra      = extra      or ""
 
-    style_name, room, mood, extra = detect_keywords(keywords)
-    style_data = STYLES[style_name]
-    room_data  = ROOMS[room]
-    mood_data  = MOODS[mood]
+    prompt  = build_english_prompt(space, activities, materials, lighting, mood, spatial, extra)
+    tags    = build_tags(space, activities, materials, lighting, mood, spatial)
+    ko_stmt = build_korean(space, activities, materials, lighting, mood, spatial, extra)
+    board   = build_html_board(space, activities, materials, lighting, mood, spatial, extra, prompt)
 
-    en_prompt = generate_english_prompt(style_data, style_name, room, mood_data, extra)
-    tags      = generate_tags(style_name, room, mood, extra)
-    ko_stmt   = generate_korean_statement(style_data, room_data, mood_data, extra)
-    board     = generate_concept_board_html(style_name, style_data, room, room_data, mood_data, extra, en_prompt)
-
-    return en_prompt, tags, ko_stmt, board
+    return prompt, tags, ko_stmt, board
 
 # ─── Gradio UI ────────────────────────────────────────────────────────────────
 
-EXAMPLES = [
-    ["modern minimalist living room calm"],
-    ["scandinavian bedroom cozy"],
-    ["industrial office productive"],
-    ["bohemian colorful bedroom romantic"],
-    ["japanese zen bathroom fresh"],
-    ["luxury dining room elegant"],
-    ["coastal kitchen fresh breezy"],
-    ["rustic bedroom cozy warm"],
-]
+SPACE_LIST    = list(SPACE_TYPES.keys())
+ACTIVITY_LIST = list(ACTIVITY_DATA.keys())
+MATERIAL_LIST = list(MATERIAL_DATA.keys())
+LIGHTING_LIST = list(LIGHTING_DATA.keys())
+MOOD_LIST     = list(MOOD_DATA.keys())
+SPATIAL_LIST  = list(SPATIAL_DATA.keys())
 
 CSS = """
-.gradio-container { max-width: 980px !important; margin: 0 auto; }
+.gradio-container { max-width: 1080px !important; margin: 0 auto; }
 footer { display: none !important; }
 """
 
@@ -407,56 +381,105 @@ with gr.Blocks(
     theme=gr.themes.Soft(primary_hue="stone", neutral_hue="stone"),
     css=CSS,
 ) as demo:
+
     gr.Markdown(
         """
-        # 🏠 AI Interior Concept Board Generator
-        Describe your space with **style · room · mood** keywords and receive a full design concept instantly — no AI image API required.
-
-        **Styles:** modern · scandinavian · industrial · bohemian · japanese · luxury · coastal · rustic
-        **Rooms:** bedroom · living room · kitchen · bathroom · office · dining room
-        **Moods:** calm · cozy · elegant · fresh · romantic · energetic · productive · playful
+        # 🏛️ AI Interior Concept Board Generator
+        Configure your space below. Combine multiple selections to build a layered design concept.
         """
     )
 
-    with gr.Row(equal_height=True):
-        keyword_input = gr.Textbox(
-            label="Design Keywords",
-            placeholder="e.g.  scandinavian bedroom cozy natural",
-            lines=2,
-            scale=5,
-        )
-        generate_btn = gr.Button("Generate Concept ✦", variant="primary", scale=1, min_width=160)
+    with gr.Row(equal_height=False):
 
-    gr.Examples(examples=EXAMPLES, inputs=keyword_input, label="Quick Examples")
+        # ── Left column: single-select + free text ──
+        with gr.Column(scale=1, min_width=220):
+            space_in   = gr.Dropdown(choices=SPACE_LIST, value="Library",
+                                     label="Space Type")
+            mood_in    = gr.Dropdown(choices=MOOD_LIST,  value="Calm",
+                                     label="Mood")
+            extra_in   = gr.Textbox(
+                label="Additional Concept Text",
+                placeholder="e.g. biophilic wall, exposed structure, terrazzo floors…",
+                lines=4,
+            )
+            gen_btn    = gr.Button("Generate Concept ✦", variant="primary", size="lg")
+
+        # ── Right column: multi-select checkboxes ──
+        with gr.Column(scale=2):
+            activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST,
+                                           label="UX / Activity")
+            material_in = gr.CheckboxGroup(choices=MATERIAL_LIST,
+                                           label="Material")
+            lighting_in = gr.CheckboxGroup(choices=LIGHTING_LIST,
+                                           label="Lighting")
+            spatial_in  = gr.CheckboxGroup(choices=SPATIAL_LIST,
+                                           label="Volume / Spatial Quality")
+
+    gr.Examples(
+        examples=[
+            ["Library",
+             ["Reading", "Learning"],
+             ["Wood", "Concrete"],
+             ["Natural Light", "Indirect"],
+             "Calm",
+             ["High Ceiling", "Layered"],
+             "Warm oak shelving, terrazzo floors, reading nooks"],
+            ["Gallery",
+             ["Exhibition", "Social"],
+             ["Glass", "Concrete"],
+             ["Dramatic", "Accent Lighting"],
+             "Minimal",
+             ["Open", "High Ceiling"],
+             ""],
+            ["Cafe",
+             ["Social", "Creative", "Rest"],
+             ["Wood", "Fabric", "Brick"],
+             ["Warm", "Indirect"],
+             "Cozy",
+             ["Layered", "Flowing"],
+             "Exposed ceiling joists, handmade ceramic tiles"],
+            ["Office",
+             ["Collaboration", "Learning"],
+             ["Metal", "Glass"],
+             ["Natural Light", "Diffused"],
+             "Futuristic",
+             ["Flexible", "Open"],
+             "Biophilic green wall, sit-stand desks"],
+            ["Community Space",
+             ["Social", "Exhibition", "Collaboration"],
+             ["Concrete", "Wood"],
+             ["Natural Light", "Accent Lighting"],
+             "Dynamic",
+             ["Flowing", "High Ceiling"],
+             "Mural art, adaptable modular furniture"],
+        ],
+        inputs=[space_in, activity_in, material_in, lighting_in,
+                mood_in, spatial_in, extra_in],
+        label="Quick Examples",
+    )
 
     with gr.Tabs():
         with gr.TabItem("📝 English Prompt"):
             prompt_out = gr.Textbox(
-                label="Image-generation prompt (copy into Midjourney, DALL·E, Stable Diffusion…)",
-                lines=5,
-                show_copy_button=True,
+                label="Image-generation prompt  (Midjourney · DALL·E · Stable Diffusion)",
+                lines=5, show_copy_button=True,
             )
         with gr.TabItem("🏷️ Tags"):
             tags_out = gr.Textbox(
-                label="Hashtags for social media / project tagging",
-                lines=3,
-                show_copy_button=True,
+                label="Hashtags", lines=3, show_copy_button=True,
             )
         with gr.TabItem("🇰🇷 Korean Concept Statement"):
-            korean_out = gr.Markdown(label="Korean Concept Statement")
+            korean_out = gr.Markdown()
         with gr.TabItem("🎨 Concept Board"):
-            board_out = gr.HTML(label="Visual Concept Board")
+            board_out = gr.HTML()
 
-    generate_btn.click(
-        fn=generate_concept,
-        inputs=keyword_input,
-        outputs=[prompt_out, tags_out, korean_out, board_out],
-    )
-    keyword_input.submit(
-        fn=generate_concept,
-        inputs=keyword_input,
-        outputs=[prompt_out, tags_out, korean_out, board_out],
-    )
+    inputs  = [space_in, activity_in, material_in, lighting_in,
+               mood_in, spatial_in, extra_in]
+    outputs = [prompt_out, tags_out, korean_out, board_out]
+
+    gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
+    # Also trigger on Enter inside the free-text box
+    extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
 
 if __name__ == "__main__":
     demo.launch()
