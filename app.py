@@ -734,7 +734,48 @@ def generate_concept(
 # ─── Styling ──────────────────────────────────────────────────────────────────
 
 CSS = """
-/* ══ Warm Minimal Studio — Readability Pass ════════════════════════ */
+/* ══ Warm Minimal Studio — Full Redesign ═══════════════════════════ */
+
+/* ── CSS variable overrides (most reliable Gradio theming method) ── */
+:root {
+    --body-background-fill:                    #F7F3EA;
+    --block-background-fill:                   #FFFDF7;
+    --block-border-color:                      #D8D0C3;
+    --block-border-width:                      1px;
+    --block-radius:                            12px;
+    --block-shadow:                            0 1px 8px rgba(38,50,56,0.05);
+    --block-label-text-color:                  #3C3428;
+    --block-label-text-size:                   11px;
+    --block-label-text-weight:                 700;
+    --block-title-text-color:                  #3C3428;
+    --block-title-text-weight:                 700;
+    --input-background-fill:                   #FFFDF7;
+    --input-border-color:                      #D0C8BA;
+    --input-border-color-focus:                #C57B57;
+    --input-text-size:                         13px;
+    --checkbox-label-background-fill:          #F2ECE3;
+    --checkbox-label-background-fill-hover:    #E4EED8;
+    --checkbox-label-background-fill-selected: #4E7040;
+    --checkbox-label-border-color:             #C8BCAC;
+    --checkbox-label-border-color-hover:       #7A9868;
+    --checkbox-label-border-color-selected:    #3C5C30;
+    --checkbox-label-text-color:               #1E1A14;
+    --checkbox-label-text-color-selected:      #FFFFFF;
+    --checkbox-background-color:               #FFFDF7;
+    --checkbox-background-color-selected:      #4E7040;
+    --checkbox-border-color:                   #C8BCAC;
+    --checkbox-border-color-selected:          #3C5C30;
+    --button-primary-background-fill:          #C57B57;
+    --button-primary-background-fill-hover:    #A86540;
+    --button-primary-text-color:               #FFFDF7;
+    --button-primary-border-color:             transparent;
+    --button-secondary-background-fill:        #FFFDF7;
+    --button-secondary-background-fill-hover:  #F0E8DC;
+    --button-secondary-text-color:             #4A4038;
+    --button-secondary-border-color:           #D0C8BA;
+    --color-accent:                            #C57B57;
+    --slider-color:                            #6B8A5E;
+}
 
 /* ── Page & container ── */
 body, .gradio-container {
@@ -753,16 +794,16 @@ footer { display: none !important; }
     box-shadow: 0 1px 8px rgba(38,50,56,0.05) !important;
 }
 
-/* ── Component labels — HIGHER CONTRAST ── */
+/* ── Block / component labels ── */
 .block .label-wrap > span,
 label > span,
 .block label > span,
 fieldset legend {
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
-    letter-spacing: 1.8px !important;
+    letter-spacing: 2px !important;
     text-transform: uppercase !important;
-    color: #5A5048 !important;   /* was #B8B0A3 — much more readable */
+    color: #3C3428 !important;
 }
 
 /* ── Text inputs / textareas ── */
@@ -805,52 +846,77 @@ textarea::placeholder, input::placeholder {
 .item, .list-items li { color: #1E1A14 !important; font-size: 13px !important; }
 .item:hover, .item.selected, .list-items li:hover { background: #F0EAE0 !important; }
 
-/* ── Checkbox chips — READABILITY FIX ──────────────────────────────
-   Unselected : very light warm beige  +  dark charcoal text  (high contrast)
-   Hover      : light sage tint        +  dark forest text
-   Selected   : deeper sage            +  white bold text     */
+/* ── Checkbox chips ─────────────────────────────────────────────────
+   Three-layer approach for maximum compatibility:
+   1. :root CSS variables (Gradio reads these natively)
+   2. Class selectors with !important
+   3. :has(input:checked) for browsers that support it             */
 .checkbox-group {
-    gap: 8px !important;
+    gap: 6px !important;
     flex-wrap: wrap !important;
-    padding: 2px 0 4px !important;
+    padding: 4px 0 6px !important;
 }
+
+/* Base chip style */
 label.checkbox-label,
 .checkbox-label {
-    background: #F5F0E8 !important;          /* light warm beige */
-    border: 1.5px solid #C8BCAC !important;  /* warm gray border */
+    background: #F2ECE3 !important;
+    border: 1.5px solid #C8BCAC !important;
     border-radius: 20px !important;
-    padding: 7px 16px !important;
-    color: #1E1A14 !important;               /* near-black text — high contrast */
-    font-size: 13px !important;              /* slightly larger */
+    padding: 6px 14px !important;
+    color: #1E1A14 !important;
+    font-size: 12.5px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
-    transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+    transition: background 0.12s, border-color 0.12s, color 0.12s !important;
     line-height: 1.5 !important;
-    margin: 2px !important;
+    margin: 2px 1px !important;
     white-space: nowrap !important;
     user-select: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0 !important;
 }
+
+/* Hover */
 label.checkbox-label:hover,
 .checkbox-label:hover {
-    background: #E4EED8 !important;          /* soft sage tint */
+    background: #E4EED8 !important;
     border-color: #7A9868 !important;
     color: #162410 !important;
 }
+
+/* Selected — class-based (Gradio adds .selected) */
 label.checkbox-label.selected,
 .checkbox-label.selected {
-    background: #4E7040 !important;          /* deep sage — sufficient contrast with white */
+    background: #4E7040 !important;
     border-color: #3C5C30 !important;
     color: #FFFFFF !important;
     font-weight: 700 !important;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12) !important;
 }
-/* Hide checkbox square, keep click area */
+
+/* Selected — :has(input:checked) for browsers that support it */
+label.checkbox-label:has(input[type="checkbox"]:checked),
+.checkbox-label:has(input[type="checkbox"]:checked) {
+    background: #4E7040 !important;
+    border-color: #3C5C30 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+/* Hide the native checkbox square — keep the label as the full click target */
 label.checkbox-label input[type="checkbox"],
 .checkbox-label input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
     opacity: 0 !important;
-    position: absolute !important;
-    width: 1px !important; height: 1px !important;
     pointer-events: none !important;
+    position: absolute !important;
 }
 
 /* ── Slider ── */
@@ -866,12 +932,12 @@ button.primary, .btn-primary {
     font-size: 14px !important;
     font-weight: 700 !important;
     letter-spacing: 0.4px !important;
-    box-shadow: 0 3px 12px rgba(197,123,87,0.32) !important;
+    box-shadow: 0 3px 12px rgba(197,123,87,0.30) !important;
     transition: background 0.2s, box-shadow 0.2s !important;
 }
 button.primary:hover {
     background: #A86540 !important;
-    box-shadow: 0 4px 16px rgba(197,123,87,0.4) !important;
+    box-shadow: 0 5px 18px rgba(197,123,87,0.40) !important;
 }
 
 /* ── Secondary button ── */
@@ -888,7 +954,23 @@ button.secondary:hover {
     border-color: #B0A898 !important;
 }
 
-/* ── Example preset cards ── */
+/* ── Column sub-headers (01 / 02 labels) ── */
+.col-header {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2.5px !important;
+    text-transform: uppercase !important;
+    color: #B8B0A3 !important;
+    margin: 0 0 16px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid #E4DDD4 !important;
+}
+.col-number {
+    color: #C57B57 !important;
+    margin-right: 6px !important;
+}
+
+/* ── Preset example cards ── */
 .example-card { flex: 1 !important; min-width: 0 !important; }
 .example-card > .wrap,
 .example-card > div {
@@ -900,28 +982,28 @@ button.secondary:hover {
 .example-card button {
     width: 100% !important;
     background: #FFFDF7 !important;
-    border: 1.5px solid #D0C8BA !important;
-    border-radius: 12px !important;
-    color: #1E1A14 !important;              /* dark readable text */
+    border: 1.5px solid #D8D0C3 !important;
+    border-radius: 14px !important;
+    color: #2A2218 !important;
     font-size: 13px !important;
     font-weight: 600 !important;
-    padding: 16px 12px !important;
-    min-height: 64px !important;
+    padding: 20px 16px !important;
+    min-height: 80px !important;
     height: auto !important;
-    text-align: center !important;
+    text-align: left !important;
     white-space: normal !important;
-    line-height: 1.5 !important;
+    line-height: 1.55 !important;
     letter-spacing: 0.1px !important;
-    box-shadow: 0 1px 4px rgba(38,50,56,0.07) !important;
-    transition: all 0.18s !important;
+    box-shadow: 0 1px 6px rgba(38,50,56,0.06) !important;
+    transition: all 0.18s ease !important;
     cursor: pointer !important;
 }
 .example-card button:hover {
-    background: #F5EDE2 !important;
+    background: #FDF5EE !important;
     border-color: #C57B57 !important;
-    color: #7A2E08 !important;
+    color: #6B2E08 !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 18px rgba(197,123,87,0.18) !important;
+    box-shadow: 0 6px 20px rgba(197,123,87,0.18) !important;
 }
 
 /* ── Tabs ── */
@@ -981,6 +1063,29 @@ button.secondary:hover {
 .prose p { color: #2A2620 !important; line-height: 1.9 !important; }
 .prose em { color: #6F6A60 !important; }
 
+/* ── Section divider headers ── */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 28px 0 16px;
+}
+.section-header-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #6B6058;
+    white-space: nowrap;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+.section-header-line {
+    flex: 1;
+    height: 1px;
+    background: #D8D0C3;
+    border-radius: 1px;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #F7F3EA; }
@@ -988,53 +1093,131 @@ button.secondary:hover {
 ::-webkit-scrollbar-thumb:hover { background: #B8B0A3; }
 """
 
+# ── Hero header with workflow steps ──────────────────────────────────────────
+
 HEADER_HTML = """
-<div style="text-align:center; padding:52px 24px 44px;
-            background:linear-gradient(180deg,#FFFDF7 0%,#F7F3EA 100%);
-            border-radius:12px; border:1px solid #D8D0C3;
-            box-shadow:0 1px 6px rgba(38,50,56,0.04); margin-bottom:0;">
+<div style="background:linear-gradient(160deg,#FFFDF7 0%,#F7F3EA 100%);
+            border:1px solid #D8D0C3; border-radius:14px;
+            box-shadow:0 2px 12px rgba(38,50,56,0.05);
+            padding:52px 32px 44px; margin-bottom:4px; text-align:center;">
+
   <p style="font-size:9px; letter-spacing:5px; text-transform:uppercase;
-            color:#C8C4BC; margin:0 0 20px; font-weight:500;">
+            color:#C0B8B0; margin:0 0 18px; font-weight:600;
+            font-family:'Helvetica Neue',Arial,sans-serif;">
     Interior Design Studio
   </p>
-  <h1 style="font-size:38px; font-weight:300; letter-spacing:2px;
-             color:#263238; margin:0 0 18px; line-height:1.15;
+
+  <h1 style="font-size:36px; font-weight:300; letter-spacing:1.5px;
+             color:#263238; margin:0 0 10px; line-height:1.15;
              font-family:'Georgia','Times New Roman',serif;">
-    Concept Board Generator
+    AI Concept Board Generator
   </h1>
-  <div style="width:28px; height:1.5px; background:#C57B57; margin:0 auto 20px; border-radius:1px;"></div>
-  <p style="font-size:13px; color:#6F6A60; max-width:500px; margin:0 auto;
-            line-height:1.85;">
-    Select space type, activities, and materials — or type any custom concept words
-    (English or Korean) in the text field below.
+
+  <div style="width:32px; height:2px; background:#C57B57; border-radius:1px;
+              margin:0 auto 22px;"></div>
+
+  <p style="font-size:13px; color:#6F6A60; max-width:520px; margin:0 auto 36px;
+            line-height:1.9; font-family:'Helvetica Neue',Arial,sans-serif;">
+    Configure your space, select materials and activities, then generate a
+    full interior concept board with prompt, tags, and Korean statement.
   </p>
+
+  <!-- Workflow steps -->
+  <div style="display:flex; align-items:center; justify-content:center;
+              gap:0; flex-wrap:wrap; max-width:680px; margin:0 auto;">
+
+    <div style="display:flex; flex-direction:column; align-items:center;
+                gap:6px; padding:0 10px;">
+      <div style="width:36px; height:36px; border-radius:50%;
+                  background:#F2ECE3; border:1.5px solid #D0C8BA;
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:14px;">⌨️</div>
+      <span style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+                   color:#A8A098; font-weight:600;">Keywords</span>
+    </div>
+
+    <div style="width:28px; height:1px; background:#D0C8BA; margin:0 2px 18px;"></div>
+
+    <div style="display:flex; flex-direction:column; align-items:center;
+                gap:6px; padding:0 10px;">
+      <div style="width:36px; height:36px; border-radius:50%;
+                  background:#F2ECE3; border:1.5px solid #D0C8BA;
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:14px;">📝</div>
+      <span style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+                   color:#A8A098; font-weight:600;">Prompt</span>
+    </div>
+
+    <div style="width:28px; height:1px; background:#D0C8BA; margin:0 2px 18px;"></div>
+
+    <div style="display:flex; flex-direction:column; align-items:center;
+                gap:6px; padding:0 10px;">
+      <div style="width:36px; height:36px; border-radius:50%;
+                  background:#F2ECE3; border:1.5px solid #D0C8BA;
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:14px;">🏷️</div>
+      <span style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+                   color:#A8A098; font-weight:600;">Tags</span>
+    </div>
+
+    <div style="width:28px; height:1px; background:#D0C8BA; margin:0 2px 18px;"></div>
+
+    <div style="display:flex; flex-direction:column; align-items:center;
+                gap:6px; padding:0 10px;">
+      <div style="width:36px; height:36px; border-radius:50%;
+                  background:#F2ECE3; border:1.5px solid #D0C8BA;
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:14px;">🇰🇷</div>
+      <span style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+                   color:#A8A098; font-weight:600;">Statement</span>
+    </div>
+
+    <div style="width:28px; height:1px; background:#D0C8BA; margin:0 2px 18px;"></div>
+
+    <div style="display:flex; flex-direction:column; align-items:center;
+                gap:6px; padding:0 10px;">
+      <div style="width:36px; height:36px; border-radius:50%;
+                  background:#FDF0E8; border:1.5px solid #DDB898;
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:14px;">🎨</div>
+      <span style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+                   color:#C57B57; font-weight:700;">Concept Board</span>
+    </div>
+
+  </div>
 </div>
 """
 
+
 def _section_header(title: str) -> str:
     return (
-        f'<div style="display:flex; align-items:center; gap:12px; margin:0 0 12px;">'
-        f'<span style="font-size:11px; font-weight:700; letter-spacing:2px; '
-        f'text-transform:uppercase; color:#4A3C30; white-space:nowrap; '
-        f'font-family:\'Helvetica Neue\',Arial,sans-serif;">{title}</span>'
-        f'<div style="flex:1; height:1px; background:#D8D0C3; border-radius:1px;"></div>'
+        f'<div class="section-header">'
+        f'<span class="section-header-label">{title}</span>'
+        f'<div class="section-header-line"></div>'
         f'</div>'
     )
 
-SECTION_LEFT  = _section_header("Space &amp; Mood")
-SECTION_RIGHT = _section_header("Programme &amp; Materials")
+
+def _col_header(number: str, title: str) -> str:
+    return (
+        f'<p class="col-header">'
+        f'<span class="col-number">{number}</span>{title}'
+        f'</p>'
+    )
+
 
 BOARD_PLACEHOLDER = """
 <div style="font-family:'Helvetica Neue',Arial,sans-serif; background:#F7F3EA;
-            padding:48px 40px; border-radius:14px; border:1.5px dashed #D0C8BA;
+            padding:56px 40px; border-radius:14px; border:1.5px dashed #D0C8BA;
             text-align:center; color:#8A8278;">
-  <p style="font-size:10px; letter-spacing:4px; text-transform:uppercase;
-            margin:0 0 16px; font-weight:500; color:#C0B8B0;">
+  <p style="font-size:9px; letter-spacing:4px; text-transform:uppercase;
+            margin:0 0 18px; font-weight:600; color:#C0B8B0;
+            font-family:'Helvetica Neue',Arial,sans-serif;">
     Interior Concept Board
   </p>
-  <div style="font-size:40px; margin-bottom:18px; opacity:0.5;">🏛️</div>
+  <div style="font-size:44px; margin-bottom:20px; opacity:0.45;">🏛️</div>
   <p style="font-size:15px; font-family:'Georgia',serif; font-weight:300;
-            color:#9A9288; line-height:1.9; margin:0;">
+            color:#9A9288; line-height:2.0; margin:0;">
     Configure your space above and click<br>
     <span style="color:#C57B57; font-weight:600;">Generate Concept ✦</span><br>
     to build your concept board.
@@ -1042,61 +1225,46 @@ BOARD_PLACEHOLDER = """
 </div>
 """
 
+# Exactly 3 preset examples as requested
 PRESET_EXAMPLES = [
     {
-        "label": "📚  Library · Calm",
-        "sub":   "Wood · Concrete · High Ceiling",
-        "data":  ("Library",
-                  ["Reading", "Learning"],
-                  ["Wood", "Concrete"],
-                  ["Natural Light", "Indirect"],
-                  "Calm",
-                  ["High Ceiling", "Layered"],
-                  "Warm oak shelving, terrazzo floors"),
+        "label": "📚  Creative Library Lounge",
+        "sub":   "Wood · Fabric · Layered · Cozy",
+        "data":  (
+            "Library",
+            ["Reading", "Creative", "Social"],
+            ["Wood", "Fabric", "Stone"],
+            ["Warm", "Indirect"],
+            "Cozy",
+            ["Layered", "High Ceiling"],
+            "Warm oak shelving, reading alcove nooks, biophilic wall",
+        ),
     },
     {
-        "label": "🖼️  Gallery · Minimal",
-        "sub":   "Glass · Concrete · Open",
-        "data":  ("Gallery",
-                  ["Exhibition", "Social"],
-                  ["Glass", "Concrete"],
-                  ["Dramatic", "Accent Lighting"],
-                  "Minimal",
-                  ["Open", "High Ceiling"],
-                  ""),
+        "label": "🌿  Calm Reading Room",
+        "sub":   "Wood · Stone · Natural Light · Calm",
+        "data":  (
+            "Library",
+            ["Reading", "Rest"],
+            ["Wood", "Stone"],
+            ["Natural Light", "Diffused"],
+            "Calm",
+            ["Compact", "Enclosed"],
+            "차분한 독서 공간, 자연광, 목재 서가",
+        ),
     },
     {
-        "label": "☕  Cafe · Cozy",
-        "sub":   "Wood · Fabric · Brick · Layered",
-        "data":  ("Cafe",
-                  ["Social", "Creative", "Rest"],
-                  ["Wood", "Fabric", "Brick"],
-                  ["Warm", "Indirect"],
-                  "Cozy",
-                  ["Layered", "Flowing"],
-                  "물결 형태 천장, 수제 도자기 타일"),
-    },
-    {
-        "label": "🖥️  Office · Futuristic",
-        "sub":   "Metal · Glass · Flexible",
-        "data":  ("Office",
-                  ["Collaboration", "Learning"],
-                  ["Metal", "Glass"],
-                  ["Natural Light", "Diffused"],
-                  "Futuristic",
-                  ["Flexible", "Open"],
-                  "자연광 생태 벽, 모듈형 파티션"),
-    },
-    {
-        "label": "🤝  Community · Dynamic",
-        "sub":   "Concrete · Wood · Flowing",
-        "data":  ("Community Space",
-                  ["Social", "Exhibition", "Collaboration"],
-                  ["Concrete", "Wood"],
-                  ["Natural Light", "Accent Lighting"],
-                  "Dynamic",
-                  ["Flowing", "High Ceiling"],
-                  "서가 벽면, 커뮤니티 이벤트 존"),
+        "label": "🔮  Futuristic Gallery Space",
+        "sub":   "Glass · Metal · Concrete · Dramatic",
+        "data":  (
+            "Gallery",
+            ["Exhibition", "Creative"],
+            ["Glass", "Metal", "Concrete"],
+            ["Dramatic", "Accent Lighting"],
+            "Futuristic",
+            ["Open", "High Ceiling"],
+            "sleek surfaces, exhibition lighting, sculptural installation",
+        ),
     },
 ]
 
@@ -1120,33 +1288,53 @@ with gr.Blocks(
     css=CSS,
 ) as demo:
 
+    # ── Hero header ──────────────────────────────────────────────────────────
     gr.HTML(HEADER_HTML)
 
-    # ── Main inputs ──────────────────────────────────────────────────────────
+    # ── Two-column input area ────────────────────────────────────────────────
     with gr.Row(equal_height=False):
-        with gr.Column(scale=1, min_width=230):
-            gr.HTML(SECTION_LEFT)
-            space_in = gr.Dropdown(choices=SPACE_LIST, value="Library",
-                                   label="Space Type")
-            mood_in  = gr.Dropdown(choices=MOOD_LIST,  value="Calm",
-                                   label="Mood")
+
+        # Left column — 01 · Project Setup
+        with gr.Column(scale=1, min_width=240):
+            gr.HTML(_col_header("01 ·", "Project Setup"))
+            space_in = gr.Dropdown(
+                choices=SPACE_LIST, value="Library",
+                label="Space Type",
+            )
+            mood_in = gr.Dropdown(
+                choices=MOOD_LIST, value="Calm",
+                label="Mood",
+            )
             extra_in = gr.Textbox(
-                label="Additional Concept Text",
+                label="Custom Concept Keywords",
                 placeholder=(
-                    "Free-form keywords — English or Korean\n"
+                    "Free-form — English or Korean\n"
                     "e.g. wave-like forms, 물결, 서가, biophilic wall"
                 ),
                 lines=4,
             )
-            gen_btn  = gr.Button("Generate Concept  ✦", variant="primary", size="lg")
+            gen_btn = gr.Button("Generate Concept  ✦", variant="primary", size="lg")
             status_out = gr.Markdown(value="", visible=True)
 
+        # Right column — 02 · Design Attributes
         with gr.Column(scale=2):
-            gr.HTML(SECTION_RIGHT)
-            activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST, label="UX / Activity")
-            material_in = gr.CheckboxGroup(choices=MATERIAL_LIST, label="Material")
-            lighting_in = gr.CheckboxGroup(choices=LIGHTING_LIST, label="Lighting")
-            spatial_in  = gr.CheckboxGroup(choices=SPATIAL_LIST,  label="Volume / Spatial Quality")
+            gr.HTML(_col_header("02 ·", "Design Attributes"))
+            activity_in = gr.CheckboxGroup(
+                choices=ACTIVITY_LIST,
+                label="UX / Activity Programme",
+            )
+            material_in = gr.CheckboxGroup(
+                choices=MATERIAL_LIST,
+                label="Material Palette",
+            )
+            lighting_in = gr.CheckboxGroup(
+                choices=LIGHTING_LIST,
+                label="Lighting Strategy",
+            )
+            spatial_in = gr.CheckboxGroup(
+                choices=SPATIAL_LIST,
+                label="Volume / Spatial Quality",
+            )
 
     # ── ComfyUI accordion ────────────────────────────────────────────────────
     with gr.Accordion("🖼️  ComfyUI Image Generation  (Optional)", open=False):
@@ -1157,7 +1345,7 @@ with gr.Blocks(
         )
         with gr.Row():
             use_comfyui_in = gr.Checkbox(
-                label="Enable ComfyUI generation", value=False, scale=1
+                label="Enable ComfyUI generation", value=False, scale=1,
             )
             comfyui_url_in = gr.Textbox(
                 label="ComfyUI Server URL",
@@ -1172,10 +1360,10 @@ with gr.Blocks(
         with gr.Row():
             steps_in   = gr.Slider(minimum=1,  maximum=100, step=1,   value=20,  label="Steps")
             cfg_in     = gr.Slider(minimum=1,  maximum=20,  step=0.5, value=7.0, label="CFG Scale")
-            imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768",           label="Image Size")
+            imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Image Size")
             seed_in    = gr.Number(value=-1, label="Seed  (−1 = random)", precision=0)
 
-    # ── Quick Examples — card buttons (no table) ─────────────────────────────
+    # ── Quick Examples — exactly 3 preset cards ──────────────────────────────
     gr.HTML(_section_header("Quick Examples"))
     with gr.Row():
         preset_btns = []
@@ -1187,7 +1375,7 @@ with gr.Blocks(
             )
             preset_btns.append((btn, preset["data"]))
 
-    # ── Output tabs ──────────────────────────────────────────────────────────
+    # ── Results section ──────────────────────────────────────────────────────
     gr.HTML(_section_header("Results"))
     with gr.Tabs():
         with gr.TabItem("📝  English Prompt"):
