@@ -964,23 +964,51 @@ with gr.Blocks(
 
 
 FORCE_CSS = """<style>
-label.checkbox-label, .checkbox-label, label[class*="checkbox"],
-.gradio-container label.checkbox-label {
+.gradio-container label, .gradio-container .label-wrap, .gradio-container .label-wrap span,
+.gradio-container .block-label, .gradio-container fieldset legend,
+.gradio-container span[data-testid="block-label"], .gradio-container [class*="block_label"],
+.gradio-container [class*="block-label"], .gradio-container h1, .gradio-container h2,
+.gradio-container h3, .gradio-container h4, .gradio-container h5 {
+    color: #3C3428 !important; background: transparent !important;
+    font-weight: 600 !important; opacity: 1 !important;
+}
+.gradio-container label.checkbox-label, .gradio-container .checkbox-label,
+.gradio-container label[class*="checkbox"], .gradio-container [data-testid="checkbox"],
+.gradio-container .wrap label, .gradio-container fieldset label {
     background: #EDE8DF !important; background-color: #EDE8DF !important;
     color: #2A2420 !important; border: 1.5px solid #C8BCAC !important;
 }
-label.checkbox-label span, .checkbox-label span, label[class*="checkbox"] span { color: #2A2420 !important; }
-label.checkbox-label:hover, .checkbox-label:hover {
+.gradio-container label.checkbox-label *, .gradio-container .checkbox-label *,
+.gradio-container fieldset label *, .gradio-container label[class*="checkbox"] * {
+    color: #2A2420 !important;
+}
+.gradio-container label.checkbox-label:hover, .gradio-container .checkbox-label:hover,
+.gradio-container fieldset label:hover {
     background: #E4EED8 !important; background-color: #E4EED8 !important; border-color: #7A9868 !important;
 }
-label.checkbox-label.selected, .checkbox-label.selected,
-label.checkbox-label:has(input:checked), .checkbox-label:has(input:checked) {
+.gradio-container label.checkbox-label:has(input:checked),
+.gradio-container .checkbox-label:has(input:checked),
+.gradio-container fieldset label:has(input:checked),
+.gradio-container label[class*="checkbox"]:has(input:checked) {
     background: #4E7040 !important; background-color: #4E7040 !important;
     border-color: #3C5C30 !important; color: #FFFFFF !important;
 }
-label.checkbox-label.selected span, .checkbox-label.selected span,
-label.checkbox-label:has(input:checked) span, .checkbox-label:has(input:checked) span { color: #FFFFFF !important; }
-.block .label-wrap span, .block .label-wrap label, fieldset legend { color: #3C3428 !important; }
+.gradio-container label.checkbox-label:has(input:checked) *,
+.gradio-container .checkbox-label:has(input:checked) *,
+.gradio-container fieldset label:has(input:checked) *,
+.gradio-container label[class*="checkbox"]:has(input:checked) * { color: #FFFFFF !important; }
+.gradio-container input, .gradio-container textarea, .gradio-container select,
+.gradio-container .wrap-inner {
+    background: #FFFDF7 !important; color: #2A2420 !important; border-color: #D0C8BA !important;
+}
+.gradio-container input::placeholder, .gradio-container textarea::placeholder { color: #9A9288 !important; }
+.gradio-container button[role="tab"] { color: #6F6A60 !important; background: transparent !important; }
+.gradio-container button[role="tab"][aria-selected="true"] {
+    color: #C57B57 !important; border-bottom: 2px solid #C57B57 !important;
+}
+.gradio-container button.secondary, .gradio-container button[class*="secondary"] {
+    background: #FFFDF7 !important; color: #4A4038 !important; border: 1px solid #D0C8BA !important;
+}
 </style>"""
 
 if __name__ == "__main__":
