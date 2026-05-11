@@ -1314,5 +1314,52 @@ with gr.Blocks(
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
             .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
 
+FORCE_CSS = """<style>
+/* Force checkbox background — overrides Gradio dark-mode stone vars */
+label.checkbox-label,
+.checkbox-label,
+label[class*="checkbox"],
+.gradio-container label.checkbox-label {
+    background: #EDE8DF !important;
+    background-color: #EDE8DF !important;
+    color: #2A2420 !important;
+    border: 1.5px solid #C8BCAC !important;
+}
+label.checkbox-label span,
+.checkbox-label span,
+label[class*="checkbox"] span {
+    color: #2A2420 !important;
+}
+label.checkbox-label:hover,
+.checkbox-label:hover {
+    background: #E4EED8 !important;
+    background-color: #E4EED8 !important;
+    border-color: #7A9868 !important;
+}
+label.checkbox-label.selected,
+.checkbox-label.selected,
+label.checkbox-label:has(input:checked),
+.checkbox-label:has(input:checked) {
+    background: #4E7040 !important;
+    background-color: #4E7040 !important;
+    border-color: #3C5C30 !important;
+    color: #FFFFFF !important;
+}
+label.checkbox-label.selected span,
+.checkbox-label.selected span,
+label.checkbox-label:has(input:checked) span,
+.checkbox-label:has(input:checked) span {
+    color: #FFFFFF !important;
+}
+/* Block/group label text */
+.block .label-wrap span,
+.block .label-wrap label,
+.form span.svelte-bound,
+fieldset legend,
+span.svelte-text {
+    color: #3C3428 !important;
+}
+</style>"""
+
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(head=FORCE_CSS)
