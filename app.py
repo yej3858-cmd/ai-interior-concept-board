@@ -1009,6 +1009,24 @@ FORCE_CSS = """<style>
 .gradio-container button.secondary, .gradio-container button[class*="secondary"] {
     background: #FFFDF7 !important; color: #4A4038 !important; border: 1px solid #D0C8BA !important;
 }
+/* Block/group titles like "Space Type", "UX / Activity" — force dark + bold */
+.gradio-container .block-info, .gradio-container .info,
+.gradio-container span.svelte-1gfkn6j, .gradio-container .form > label,
+.gradio-container .form > label > span, .gradio-container .block > .label-wrap,
+.gradio-container [class*="head"] > span, .gradio-container legend {
+    color: #2A2420 !important; font-weight: 700 !important;
+    font-size: 13px !important; letter-spacing: 0.4px !important; opacity: 1 !important;
+}
+/* Markdown <strong> in Korean output — kill background highlight */
+.gradio-container .prose strong, .gradio-container strong,
+.gradio-container .markdown strong, .gradio-container [class*="markdown"] strong {
+    background: transparent !important; background-color: transparent !important;
+    color: #C57B57 !important; font-weight: 700 !important;
+    padding: 0 !important; box-shadow: none !important;
+}
+/* Markdown body text fallback */
+.gradio-container .prose, .gradio-container .prose p,
+.gradio-container [class*="markdown"] p { color: #2A2420 !important; }
 </style>"""
 
 if __name__ == "__main__":
