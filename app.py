@@ -32,13 +32,26 @@ def _ai_photo_url(prompt: str, w: int = 800, h: int = 600, seed: int = 0) -> str
 
 def _load_env():
     p = Path(__file__).parent / ".env"
-    if p.exists():
-        for line in p.read_text().splitlines():
-            if "=" in line and not line.strip().startswith("#"):
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+    if not p.exists():
+        return
+    raw = p.read_bytes()
+    for enc in ("utf-8-sig", "utf-16", "utf-8", "latin-1"):
+        try:
+            txt = raw.decode(enc)
+            if "GEMINI_API_KEY" in txt or "=" in txt:
+                break
+        except Exception:
+            continue
+    else:
+        txt = raw.decode("utf-8", errors="ignore")
+    for line in txt.splitlines():
+        line = line.strip().lstrip("﻿")
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 _load_env()
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+print(f"[Gemini] API key loaded: {'yes' if GEMINI_KEY else 'NO — autofill/narrative disabled'}")
 
 def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
     if not GEMINI_KEY:
@@ -677,29 +690,42 @@ def reset_inputs():
 
 
 def ai_autofill(text):
-    if not text or not text.strip() or not GEMINI_KEY:
+    if not GEMINI_KEY:
+        gr.Warning("Gemini API 키가 로드되지 않았습니다. .env 파일 확인하세요.")
+        return (gr.update(),) * 6
+    if not text or not text.strip():
+        gr.Warning("Custom Keywords 입력란에 자연어 설명을 먼저 적어주세요.")
         return (gr.update(),) * 6
     prompt = (
-        "사용자의 자연어 설명을 분석해 인테리어 컨셉 필드를 자동 선택하세요.\n"
-        f"사용자 입력: \"{text}\"\n\n"
-        f"가능한 값:\n- space: {SPACE_LIST}\n- mood: {MOOD_LIST}\n"
-        f"- materials (다중): {MATERIAL_LIST}\n- lighting (다중): {LIGHTING_LIST}\n"
-        f"- activities (다중): {ACTIVITY_LIST}\n- spatial (다중): {SPATIAL_LIST}\n\n"
-        "JSON으로만 응답: {\"space\":\"...\",\"mood\":\"...\",\"materials\":[...],"
-        "\"lighting\":[...],\"activities\":[...],\"spatial\":[...]}"
+        "사용자의 자연어 설명을 분석해 인테리어 컨셉 필드를 자동 선택하세요. "
+        "각 다중 필드는 최소 2개 이상 선택. 응답은 반드시 아래 형식의 순수 JSON 한 개.\n"
+        f"입력: \"{text}\"\n"
+        f"space (1개, 택1): {SPACE_LIST}\n"
+        f"mood (1개, 택1): {MOOD_LIST}\n"
+        f"materials (배열): {MATERIAL_LIST}\n"
+        f"lighting (배열): {LIGHTING_LIST}\n"
+        f"activities (배열): {ACTIVITY_LIST}\n"
+        f"spatial (배열): {SPATIAL_LIST}\n"
+        "형식: {\"space\":\"\",\"mood\":\"\",\"materials\":[],\"lighting\":[],\"activities\":[],\"spatial\":[]}"
     )
-    out = gemini_call(prompt, want_json=True, timeout=15)
+    out = gemini_call(prompt, want_json=True, timeout=20)
+    if not out:
+        gr.Warning("Gemini 응답 없음 (네트워크 또는 키 문제)")
+        return (gr.update(),) * 6
     try:
-        j = json.loads(out)
+        m = re.search(r"\{[\s\S]*\}", out)
+        j = json.loads(m.group(0) if m else out)
+        gr.Info(f"AI 자동입력 완료: {j.get('space','')} · {j.get('mood','')}")
         return (
             j.get("space") or gr.update(),
             j.get("mood") or gr.update(),
-            j.get("materials") or [],
-            j.get("lighting") or [],
-            j.get("activities") or [],
-            j.get("spatial") or [],
+            [m for m in (j.get("materials") or []) if m in MATERIAL_LIST],
+            [l for l in (j.get("lighting") or []) if l in LIGHTING_LIST],
+            [a for a in (j.get("activities") or []) if a in ACTIVITY_LIST],
+            [s for s in (j.get("spatial") or []) if s in SPATIAL_LIST],
         )
-    except Exception:
+    except Exception as e:
+        gr.Warning(f"AI 응답 파싱 실패: {str(e)[:80]}")
         return (gr.update(),) * 6
 
 
