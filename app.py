@@ -28,7 +28,27 @@ from urllib.parse import quote as _urlquote
 
 def _ai_photo_url(prompt: str, w: int = 800, h: int = 600, seed: int = 0) -> str:
     p = _urlquote((prompt or "interior architecture concept")[:280])
-    return f"https://image.pollinations.ai/prompt/{p}?width={w}&height={h}&nologo=true&seed={seed}"
+    model = os.environ.get("POLLINATIONS_MODEL", "flux").strip() or "flux"
+    return (f"https://image.pollinations.ai/prompt/{p}"
+            f"?width={w}&height={h}&nologo=true&seed={seed}&model={model}&enhance=true")
+
+
+HF_KEY = os.environ.get("HF_API_KEY", "").strip()
+
+def hf_sdxl_generate(prompt: str):
+    if not HF_KEY or not HAS_PIL:
+        return None
+    url = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+    body = json.dumps({"inputs": prompt[:500],
+                       "parameters": {"num_inference_steps": 25, "guidance_scale": 7.0}}).encode("utf-8")
+    req = _urlreq.Request(url, data=body, headers={
+        "Authorization": f"Bearer {HF_KEY}", "Content-Type": "application/json"})
+    try:
+        with _urlreq.urlopen(req, timeout=60) as r:
+            return PILImage.open(BytesIO(r.read())).convert("RGB")
+    except Exception as e:
+        print(f"[HF SDXL] {e}")
+        return None
 
 def _load_env():
     p = Path(__file__).parent / ".env"
@@ -483,6 +503,33 @@ def _board_label(text: str) -> str:
             f'color:#7A7268;margin:0 0 12px;font-weight:700;">{text}</p>')
 
 
+def extract_palette(img, n: int = 5):
+    if img is None or not HAS_PIL:
+        return []
+    try:
+        small = img.convert("RGB").resize((150, 150))
+        q = small.quantize(colors=n, method=2)
+        pal = q.getpalette()[: n * 3]
+        return [f"#{pal[i]:02X}{pal[i+1]:02X}{pal[i+2]:02X}" for i in range(0, n * 3, 3)]
+    except Exception:
+        return []
+
+
+def _palette_strip_html(hex_list):
+    if not hex_list:
+        return ""
+    swatches = "".join(
+        f'<div style="flex:1;min-width:50px;height:54px;background:{h};'
+        f'border-radius:6px;position:relative;border:1px solid rgba(0,0,0,0.08);'
+        f'box-shadow:0 1px 2px rgba(0,0,0,0.05);">'
+        f'<span style="position:absolute;bottom:4px;left:6px;font-size:9px;font-weight:600;'
+        f'color:#FFFDF7;text-shadow:0 1px 2px rgba(0,0,0,0.6);letter-spacing:0.5px;">{h}</span>'
+        f'</div>' for h in hex_list)
+    return (f'<div style="background:#FFFDF7;border-radius:10px;padding:16px;margin-bottom:10px;'
+            f'border:1px solid #D8D0C3;">{_board_label("Color Palette · 추출 색상")}'
+            f'<div style="display:flex;gap:8px;">{swatches}</div></div>')
+
+
 def build_html_board(
     space, activities, materials, lighting, mood, spatial,
     translated_extra, main_prompt,
@@ -515,6 +562,15 @@ def build_html_board(
     bot_tile  = resolve_image_slot(future_atmosphere, uploaded_atmosphere, sp["img_labels"][2], sp["img_icons"][2],
                                    MATERIAL_DATA.get(tile_mats[2], MATERIAL_DATA["Stone"])["hex"],
                                    photo=bot_photo)
+    palette_hex = []
+    for src in (uploaded_main, uploaded_material, uploaded_atmosphere, future_main, future_material, future_atmosphere):
+        if src is not None and not palette_hex:
+            palette_hex = extract_palette(src, 5)
+            break
+    if not palette_hex:
+        palette_hex = [MATERIAL_DATA.get(m, MATERIAL_DATA["Wood"])["hex"]
+                       for m in (materials or ["Wood", "Concrete", "Stone"])[:5]]
+    palette_html = _palette_strip_html(palette_hex)
     mat_blocks = "".join(_material_block(m) for m in (materials or ["Wood"]))
     act_chips  = "".join(_chip(a, "#EDE8DF", "#4A3C30") for a in activities) or _chip("—", "#F5F2EE", "#AAA8A4")
     lit_chips  = "".join(_chip(l, "#EDE8DF", "#3C3830") for l in lighting)   or _chip("—", "#F5F2EE", "#AAA8A4")
@@ -579,6 +635,7 @@ def build_html_board(
       {bot_tile}
     </div>
   </div>
+  {palette_html}
   <div style="background:#FFFDF7;border-radius:10px;padding:20px;margin-bottom:10px;border:1px solid #D8D0C3;">
     {_board_label("Material Palette")}
     <div style="display:flex;gap:12px;flex-wrap:wrap;">{mat_blocks}</div>
