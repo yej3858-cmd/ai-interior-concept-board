@@ -24,6 +24,11 @@ except ImportError:
     HAS_PIL = False
 
 import urllib.request as _urlreq
+from urllib.parse import quote as _urlquote
+
+def _ai_photo_url(prompt: str, w: int = 800, h: int = 600, seed: int = 0) -> str:
+    p = _urlquote((prompt or "interior architecture concept")[:280])
+    return f"https://image.pollinations.ai/prompt/{p}?width={w}&height={h}&nologo=true&seed={seed}"
 
 def _load_env():
     p = Path(__file__).parent / ".env"
@@ -472,6 +477,7 @@ def build_html_board(
     future_main=None, future_material=None, future_atmosphere=None,
     uploaded_main=None, uploaded_material=None, uploaded_atmosphere=None,
     warning="", ko_override="",
+    material_prompt="", atmo_prompt="", seed_base=0,
 ):
     custom_descriptors = custom_descriptors or []
     sp = SPACE_TYPES.get(space, {"ko": space or "Interior Space",
@@ -483,16 +489,19 @@ def build_html_board(
     first_mat = materials[0] if materials else "Wood"
     accent    = MATERIAL_DATA.get(first_mat, MATERIAL_DATA["Wood"])["hex"]
     tile_mats = ((materials or ["Wood", "Concrete", "Stone"]) * 3)[:3]
-    space_photo = _SPACE_PHOTO.get(space, "")
+    sb = seed_base or random.randint(1, 999999)
+    hero_photo = _ai_photo_url(main_prompt, 800, 600, seed=sb)
+    mid_photo  = _ai_photo_url(material_prompt or main_prompt, 600, 400, seed=sb + 1)
+    bot_photo  = _ai_photo_url(atmo_prompt or main_prompt, 600, 400, seed=sb + 2)
     hero_tile = resolve_image_slot(future_main, uploaded_main, sp["img_labels"][0], sp["img_icons"][0],
                                    MATERIAL_DATA.get(tile_mats[0], MATERIAL_DATA["Wood"])["hex"],
-                                   photo=space_photo)
+                                   photo=hero_photo)
     mid_tile  = resolve_image_slot(future_material, uploaded_material, sp["img_labels"][1], sp["img_icons"][1],
                                    MATERIAL_DATA.get(tile_mats[1], MATERIAL_DATA["Concrete"])["hex"],
-                                   photo=_MATERIAL_PHOTO.get(tile_mats[1], ""))
+                                   photo=mid_photo)
     bot_tile  = resolve_image_slot(future_atmosphere, uploaded_atmosphere, sp["img_labels"][2], sp["img_icons"][2],
                                    MATERIAL_DATA.get(tile_mats[2], MATERIAL_DATA["Stone"])["hex"],
-                                   photo=_MATERIAL_PHOTO.get(tile_mats[2], ""))
+                                   photo=bot_photo)
     mat_blocks = "".join(_material_block(m) for m in (materials or ["Wood"]))
     act_chips  = "".join(_chip(a, "#EDE8DF", "#4A3C30") for a in activities) or _chip("—", "#F5F2EE", "#AAA8A4")
     lit_chips  = "".join(_chip(l, "#EDE8DF", "#3C3830") for l in lighting)   or _chip("—", "#F5F2EE", "#AAA8A4")
@@ -504,8 +513,9 @@ def build_html_board(
                           f'margin-bottom:10px;border:1px solid #D8D0C3;border-left:3px solid #C57B57;">'
                           f'{_board_label("Custom Concept Elements")}'
                           f'<div style="line-height:2;">{cc}</div></div>')
-    ko_html   = _md_bold_to_html(build_korean(space, activities, materials, lighting, mood, spatial,
-                                              translated_extra, custom_descriptors))
+    ko_raw = ko_override or build_korean(space, activities, materials, lighting, mood, spatial,
+                                          translated_extra, custom_descriptors)
+    ko_html = _md_bold_to_html(ko_raw)
     tags_str  = build_tags(space, activities, materials, lighting, mood, spatial, custom_descriptors)
     tag_chips = "".join(_chip(t, "#F2EDE8", "#6B5E54", "#D8D0C3") for t in tags_str.split("  "))
     warning_banner = ""
@@ -608,6 +618,25 @@ def generate_concept(
     tags    = build_tags(space, activities, materials, lighting, mood, spatial, custom_descriptors)
     ko_stmt = build_korean(space, activities, materials, lighting, mood, spatial,
                            translated_extra, custom_descriptors)
+    if GEMINI_KEY:
+        ctx = (f"Space: {space}, Mood: {mood}, Materials: {materials or '-'}, "
+               f"Lighting: {lighting or '-'}, Activities: {activities or '-'}, "
+               f"Spatial: {spatial or '-'}, Extra: {translated_extra or '-'}")
+        gp = gemini_call(
+            "당신은 인테리어 디자이너입니다. 아래 컨셉에 대해 출력하세요. "
+            "JSON으로만 응답: {\"ko\":\"3-4문장 한국어 컨셉 설명, 시적이고 구체적 (Markdown **bold** 강조)\","
+            "\"main\":\"슬롯1 메인 뷰 이미지 프롬프트 영어 한 문장 (cinematic, photographic)\","
+            "\"material\":\"슬롯2 재료/디테일 클로즈업 영어 한 문장\","
+            "\"atmosphere\":\"슬롯3 분위기/조명 영어 한 문장\"}\n\n" + ctx,
+            want_json=True, timeout=20)
+        try:
+            j = json.loads(gp) if gp else {}
+            if j.get("ko"): ko_stmt = j["ko"]
+            if j.get("main"): main_prompt = j["main"]
+            if j.get("material"): material_prompt = j["material"]
+            if j.get("atmosphere"): atmosphere_prompt = j["atmosphere"]
+        except Exception:
+            pass
     future_main = future_material = future_atmosphere = None
     warning = ""
     if use_external and external_url and external_url.strip():
@@ -633,7 +662,9 @@ def generate_concept(
         custom_descriptors=custom_descriptors,
         future_main=future_main, future_material=future_material, future_atmosphere=future_atmosphere,
         uploaded_main=upload_main, uploaded_material=upload_material, uploaded_atmosphere=upload_atmosphere,
-        warning=warning,
+        warning=warning, ko_override=ko_stmt,
+        material_prompt=material_prompt, atmo_prompt=atmosphere_prompt,
+        seed_base=int(seed) if seed and int(seed) >= 0 else 0,
     )
     n_uploads = sum(1 for x in [upload_main, upload_material, upload_atmosphere] if x is not None)
     upload_note = f" · {n_uploads}장 이미지 사용" if n_uploads else ""
@@ -643,6 +674,33 @@ def generate_concept(
 
 def reset_inputs():
     return "Library", [], [], [], "Calm", [], "", None, None, None
+
+
+def ai_autofill(text):
+    if not text or not text.strip() or not GEMINI_KEY:
+        return (gr.update(),) * 6
+    prompt = (
+        "사용자의 자연어 설명을 분석해 인테리어 컨셉 필드를 자동 선택하세요.\n"
+        f"사용자 입력: \"{text}\"\n\n"
+        f"가능한 값:\n- space: {SPACE_LIST}\n- mood: {MOOD_LIST}\n"
+        f"- materials (다중): {MATERIAL_LIST}\n- lighting (다중): {LIGHTING_LIST}\n"
+        f"- activities (다중): {ACTIVITY_LIST}\n- spatial (다중): {SPATIAL_LIST}\n\n"
+        "JSON으로만 응답: {\"space\":\"...\",\"mood\":\"...\",\"materials\":[...],"
+        "\"lighting\":[...],\"activities\":[...],\"spatial\":[...]}"
+    )
+    out = gemini_call(prompt, want_json=True, timeout=15)
+    try:
+        j = json.loads(out)
+        return (
+            j.get("space") or gr.update(),
+            j.get("mood") or gr.update(),
+            j.get("materials") or [],
+            j.get("lighting") or [],
+            j.get("activities") or [],
+            j.get("spatial") or [],
+        )
+    except Exception:
+        return (gr.update(),) * 6
 
 
 _MAT_COLORS = {
@@ -930,10 +988,11 @@ with gr.Blocks(
         with gr.Column(scale=1, min_width=260):
             space_in = gr.Dropdown(choices=SPACE_LIST, value="Library", label="Space Type")
             mood_in  = gr.Dropdown(choices=MOOD_LIST,  value="Calm",    label="Mood")
-            extra_in = gr.Textbox(label="Custom Keywords",
-                                   placeholder="예: 바이오필릭, wave-like forms, 서가", lines=3)
+            extra_in = gr.Textbox(label="Custom Keywords / Natural Description",
+                                   placeholder="예: 따뜻한 우드 톤의 조용한 도서관, 바이오필릭 요소", lines=3)
             with gr.Row():
                 gen_btn   = gr.Button("Generate  ✶", variant="primary")
+                ai_btn    = gr.Button("✨ AI 자동입력", variant="secondary", min_width=110)
                 reset_btn = gr.Button("↺", variant="secondary", min_width=48)
             status_out = gr.Markdown(value="", elem_classes=["status-msg"])
 
@@ -1020,6 +1079,10 @@ with gr.Blocks(
                     outputs=[space_in, activity_in, material_in, lighting_in,
                              mood_in, spatial_in, extra_in,
                              upload_main_in, upload_material_in, upload_atmosphere_in])
+
+    # AI 자동입력
+    ai_btn.click(fn=ai_autofill, inputs=[extra_in],
+                 outputs=[space_in, mood_in, material_in, lighting_in, activity_in, spatial_in])
 
     # Preset cards
     preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
