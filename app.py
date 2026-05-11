@@ -1007,7 +1007,7 @@ HEADER_HTML = """
             padding:52px 32px 44px;margin-bottom:4px;text-align:center;">
 
   <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;
-            color:#C0B8B0;margin:0 0 18px;font-weight:600;">Interior Design Studio</p>
+            color:#8A8278;margin:0 0 18px;font-weight:600;">Interior Design Studio</p>
 
   <h1 style="font-size:36px;font-weight:300;letter-spacing:1.5px;
              color:#263238;margin:0 0 10px;line-height:1.15;
@@ -1025,17 +1025,17 @@ HEADER_HTML = """
   <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;max-width:760px;margin:0 auto;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
       <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">⌨️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#A8A098;font-weight:600;">키워드</span>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#6B6058;font-weight:600;">키워드</span>
     </div>
     <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
       <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">📝</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#A8A098;font-weight:600;">3 프롬프트</span>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#6B6058;font-weight:600;">3 프롬프트</span>
     </div>
     <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
       <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">🖼️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#A8A098;font-weight:600;">이미지 업로드</span>
+      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#6B6058;font-weight:600;">이미지 업로드</span>
     </div>
     <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
@@ -1142,6 +1142,17 @@ with gr.Blocks(
         primary_hue=gr.themes.colors.orange,
         neutral_hue=gr.themes.colors.stone,
         font=gr.themes.GoogleFont("Inter"),
+    ).set(
+        checkbox_label_background_fill="#EDE8DF",
+        checkbox_label_background_fill_hover="#E4EED8",
+        checkbox_label_background_fill_selected="#4E7040",
+        checkbox_label_text_color="#1E1A14",
+        checkbox_label_text_color_selected="#FFFFFF",
+        checkbox_label_border_color="#C8BCAC",
+        checkbox_label_border_color_hover="#7A9868",
+        checkbox_label_border_color_selected="#3C5C30",
+        body_text_color="#1E1A14",
+        body_text_color_subdued="#5A5248",
     ),
     css=CSS,
 ) as demo:
