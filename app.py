@@ -73,6 +73,33 @@ _load_env()
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 print(f"[Gemini] API key loaded: {'yes' if GEMINI_KEY else 'NO — autofill/narrative disabled'}")
 
+
+def _safe_json(text: str) -> dict:
+    if not text:
+        return {}
+    # strip markdown fences
+    text = re.sub(r"```[a-z]*\n?", "", text).strip()
+    # extract first {...}
+    m = re.search(r"\{[\s\S]*\}", text)
+    blob = m.group(0) if m else text
+    # try strict parse first
+    try:
+        return json.loads(blob)
+    except Exception:
+        pass
+    # fix single-quoted strings → double-quoted
+    try:
+        fixed = re.sub(r"'([^']*)'", r'"\1"', blob)
+        return json.loads(fixed)
+    except Exception:
+        pass
+    # fix unquoted keys
+    try:
+        fixed = re.sub(r'(\s*)(\w+)(\s*):', r'\1"\2"\3:', blob)
+        return json.loads(fixed)
+    except Exception:
+        return {}
+
 def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
     if not GEMINI_KEY:
         return ""
@@ -414,13 +441,13 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
 
 
 _MATERIAL_PHOTO = {
-    "Wood":     "https://images.unsplash.com/photo-1518605380956-de1ab1d8c3e2?w=400&h=400&fit=crop",
-    "Concrete": "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=400&h=400&fit=crop",
-    "Glass":    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=400&h=400&fit=crop",
-    "Fabric":   "https://images.unsplash.com/photo-1620735692151-26a7e0748429?w=400&h=400&fit=crop",
-    "Metal":    "https://images.unsplash.com/photo-1535557597501-0fee0a500c57?w=400&h=400&fit=crop",
-    "Stone":    "https://images.unsplash.com/photo-1604147495798-57beb5d6af73?w=400&h=400&fit=crop",
-    "Brick":    "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=400&h=400&fit=crop",
+    "Wood":     "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?w=400&h=400&fit=crop",
+    "Concrete": "https://images.unsplash.com/photo-1514923995763-768e52f4ae1d?w=400&h=400&fit=crop",
+    "Glass":    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&h=400&fit=crop",
+    "Fabric":   "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop",
+    "Metal":    "https://images.unsplash.com/photo-1567360425618-1594206637d2?w=400&h=400&fit=crop",
+    "Stone":    "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&h=400&fit=crop",
+    "Brick":    "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&h=400&fit=crop",
 }
 _SPACE_PHOTO = {
     "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
@@ -435,9 +462,13 @@ _SPACE_PHOTO = {
 
 def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%", photo: str = "") -> str:
     if photo:
-        bg = f'background:#EDE8DF url({photo}) center/cover no-repeat;'
+        bg = f'background:#D8D2C8 url({photo}) center/cover no-repeat;'
         label_color = "#FFFDF7"
-        overlay = '<div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(20,18,14,0.55));"></div>'
+        overlay = ('<div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(20,18,14,0.55));"></div>'
+                   '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+                   'font-size:11px;color:rgba(80,70,60,0.5);letter-spacing:1px;pointer-events:none;'
+                   'background:rgba(255,253,247,0.6);padding:4px 10px;border-radius:20px;">'
+                   'AI 이미지 생성 중…</div>')
     else:
         pale  = _pale_tint(mat_hex, 0.12)
         light = _pale_tint(mat_hex, 0.22)
@@ -772,8 +803,9 @@ def ai_autofill(text):
         gr.Warning("Gemini 응답 없음 (네트워크 또는 키 문제)")
         return (gr.update(),) * 6
     try:
-        m = re.search(r"\{[\s\S]*\}", out)
-        j = json.loads(m.group(0) if m else out)
+        j = _safe_json(out)
+        if not j:
+            raise ValueError("empty")
         gr.Info(f"AI 자동입력 완료: {j.get('space','')} · {j.get('mood','')}")
         return (
             j.get("space") or gr.update(),
