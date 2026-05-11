@@ -23,6 +23,37 @@ try:
 except ImportError:
     HAS_PIL = False
 
+import urllib.request as _urlreq
+
+def _load_env():
+    p = Path(__file__).parent / ".env"
+    if p.exists():
+        for line in p.read_text().splitlines():
+            if "=" in line and not line.strip().startswith("#"):
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+_load_env()
+GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+
+def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
+    if not GEMINI_KEY:
+        return ""
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
+    cfg = {"temperature": 0.85, "maxOutputTokens": 800}
+    if want_json:
+        cfg["responseMimeType"] = "application/json"
+    body = json.dumps({"contents": [{"parts": [{"text": prompt}]}],
+                       "generationConfig": cfg}).encode("utf-8")
+    req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+    try:
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"[Gemini] {e}")
+        return ""
+
 
 KO_DICT = {
     "도서관": "library", "라운지": "lounge", "갤러리": "gallery",
@@ -321,14 +352,14 @@ def build_korean(space, activities, materials, lighting, mood, spatial,
     )
 
 
-def resolve_image_slot(future_img, uploaded_img, label, icon, mat_hex):
+def resolve_image_slot(future_img, uploaded_img, label, icon, mat_hex, photo=""):
     if future_img is not None:
         b64 = pil_to_b64(future_img)
         if b64: return _generated_tile(b64, source_label="Generated")
     if uploaded_img is not None:
         b64 = pil_to_b64(uploaded_img)
         if b64: return _generated_tile(b64, source_label="Uploaded")
-    return _img_tile(label, icon, mat_hex)
+    return _img_tile(label, icon, mat_hex, photo=photo)
 
 
 def _md_bold_to_html(text: str) -> str:
@@ -342,23 +373,49 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
     return f"#{min(r,255):02X}{min(g,255):02X}{min(b,255):02X}"
 
 
-def _photo_url(keyword: str, w: int = 600, h: int = 600) -> str:
-    kws = keyword.lower().replace(" ", ",").replace("/", ",")
-    return f"https://loremflickr.com/{w}/{h}/{kws}"
+_MATERIAL_PHOTO = {
+    "Wood":     "https://images.unsplash.com/photo-1518605380956-de1ab1d8c3e2?w=400&h=400&fit=crop",
+    "Concrete": "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=400&h=400&fit=crop",
+    "Glass":    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=400&h=400&fit=crop",
+    "Fabric":   "https://images.unsplash.com/photo-1620735692151-26a7e0748429?w=400&h=400&fit=crop",
+    "Metal":    "https://images.unsplash.com/photo-1535557597501-0fee0a500c57?w=400&h=400&fit=crop",
+    "Stone":    "https://images.unsplash.com/photo-1604147495798-57beb5d6af73?w=400&h=400&fit=crop",
+    "Brick":    "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=400&h=400&fit=crop",
+}
+_SPACE_PHOTO = {
+    "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
+    "Lounge":           "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop",
+    "Gallery":          "https://images.unsplash.com/photo-1545987796-200677ee1011?w=800&h=600&fit=crop",
+    "Cafe":             "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&h=600&fit=crop",
+    "Office":           "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop",
+    "Learning Space":   "https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=800&h=600&fit=crop",
+    "Community Space":  "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&h=600&fit=crop",
+}
 
 
-def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%") -> str:
-    photo = _photo_url(f"{label},interior,architecture")
+def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%", photo: str = "") -> str:
+    if photo:
+        bg = f'background:#EDE8DF url({photo}) center/cover no-repeat;'
+        label_color = "#FFFDF7"
+        overlay = '<div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(20,18,14,0.55));"></div>'
+    else:
+        pale  = _pale_tint(mat_hex, 0.12)
+        light = _pale_tint(mat_hex, 0.22)
+        r, g, b = int(mat_hex[1:3], 16), int(mat_hex[3:5], 16), int(mat_hex[5:7], 16)
+        label_color = f"#{int(r*0.55):02X}{int(g*0.55):02X}{int(b*0.55):02X}"
+        bg = f'background:linear-gradient(145deg,{pale},{light});'
+        overlay = ('<div style="position:absolute;inset:0;background-image:'
+                   'repeating-linear-gradient(0deg,transparent 0 28px,rgba(38,50,56,0.04) 28px 29px),'
+                   'repeating-linear-gradient(90deg,transparent 0 28px,rgba(38,50,56,0.04) 28px 29px);"></div>')
     return (
         f'<div style="border:1px solid #D8D0C3;border-radius:10px;height:{height};'
-        f'min-height:128px;position:relative;overflow:hidden;'
-        f'background:#EDE8DF url({photo}) center/cover no-repeat;">'
-        f'<div style="position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(20,18,14,0.55));"></div>'
-        f'<span style="position:absolute;top:8px;left:10px;font-size:14px;opacity:0.85;'
-        f'background:rgba(255,253,247,0.9);border-radius:50%;width:24px;height:24px;'
+        f'min-height:128px;position:relative;overflow:hidden;{bg}">'
+        f'{overlay}'
+        f'<span style="position:absolute;top:8px;left:10px;font-size:14px;'
+        f'background:rgba(255,253,247,0.92);border-radius:50%;width:24px;height:24px;'
         f'display:flex;align-items:center;justify-content:center;">{icon}</span>'
         f'<span style="position:absolute;bottom:8px;left:10px;right:10px;font-size:10px;font-weight:700;'
-        f'letter-spacing:2px;text-transform:uppercase;color:#FFFDF7;">{label}</span>'
+        f'letter-spacing:2px;text-transform:uppercase;color:{label_color};">{label}</span>'
         f'</div>'
     )
 
@@ -377,10 +434,14 @@ def _generated_tile(b64: str, height: str = "100%", source_label: str = "Uploade
 
 def _material_block(name: str) -> str:
     d = MATERIAL_DATA[name]
-    photo = _photo_url(f"{name},texture,material", 300, 300)
+    photo = _MATERIAL_PHOTO.get(name, "")
+    if photo:
+        bg_css = f'background:#EDE8DF url({photo}) center/cover no-repeat;'
+    else:
+        bg_css = f'background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
     return (
         f'<div style="flex:1;min-width:78px;">'
-        f'<div style="height:60px;background:#EDE8DF url({photo}) center/cover no-repeat;'
+        f'<div style="height:60px;{bg_css}'
         f'border-radius:7px;margin-bottom:6px;position:relative;border:1px solid rgba(0,0,0,0.1);'
         f'box-shadow:0 1px 3px rgba(0,0,0,0.08);">'
         f'<span style="position:absolute;bottom:4px;left:6px;right:6px;font-size:8px;font-weight:700;'
@@ -410,7 +471,7 @@ def build_html_board(
     custom_descriptors=None,
     future_main=None, future_material=None, future_atmosphere=None,
     uploaded_main=None, uploaded_material=None, uploaded_atmosphere=None,
-    warning="",
+    warning="", ko_override="",
 ):
     custom_descriptors = custom_descriptors or []
     sp = SPACE_TYPES.get(space, {"ko": space or "Interior Space",
@@ -422,12 +483,16 @@ def build_html_board(
     first_mat = materials[0] if materials else "Wood"
     accent    = MATERIAL_DATA.get(first_mat, MATERIAL_DATA["Wood"])["hex"]
     tile_mats = ((materials or ["Wood", "Concrete", "Stone"]) * 3)[:3]
+    space_photo = _SPACE_PHOTO.get(space, "")
     hero_tile = resolve_image_slot(future_main, uploaded_main, sp["img_labels"][0], sp["img_icons"][0],
-                                   MATERIAL_DATA.get(tile_mats[0], MATERIAL_DATA["Wood"])["hex"])
+                                   MATERIAL_DATA.get(tile_mats[0], MATERIAL_DATA["Wood"])["hex"],
+                                   photo=space_photo)
     mid_tile  = resolve_image_slot(future_material, uploaded_material, sp["img_labels"][1], sp["img_icons"][1],
-                                   MATERIAL_DATA.get(tile_mats[1], MATERIAL_DATA["Concrete"])["hex"])
+                                   MATERIAL_DATA.get(tile_mats[1], MATERIAL_DATA["Concrete"])["hex"],
+                                   photo=_MATERIAL_PHOTO.get(tile_mats[1], ""))
     bot_tile  = resolve_image_slot(future_atmosphere, uploaded_atmosphere, sp["img_labels"][2], sp["img_icons"][2],
-                                   MATERIAL_DATA.get(tile_mats[2], MATERIAL_DATA["Stone"])["hex"])
+                                   MATERIAL_DATA.get(tile_mats[2], MATERIAL_DATA["Stone"])["hex"],
+                                   photo=_MATERIAL_PHOTO.get(tile_mats[2], ""))
     mat_blocks = "".join(_material_block(m) for m in (materials or ["Wood"]))
     act_chips  = "".join(_chip(a, "#EDE8DF", "#4A3C30") for a in activities) or _chip("—", "#F5F2EE", "#AAA8A4")
     lit_chips  = "".join(_chip(l, "#EDE8DF", "#3C3830") for l in lighting)   or _chip("—", "#F5F2EE", "#AAA8A4")
