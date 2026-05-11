@@ -342,24 +342,23 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
     return f"#{min(r,255):02X}{min(g,255):02X}{min(b,255):02X}"
 
 
+def _photo_url(keyword: str, w: int = 600, h: int = 600) -> str:
+    kws = keyword.lower().replace(" ", ",").replace("/", ",")
+    return f"https://loremflickr.com/{w}/{h}/{kws}"
+
+
 def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%") -> str:
-    pale  = _pale_tint(mat_hex, 0.12)
-    light = _pale_tint(mat_hex, 0.22)
-    r, g, b = int(mat_hex[1:3], 16), int(mat_hex[3:5], 16), int(mat_hex[5:7], 16)
-    icon_col = f"#{int(r*0.55):02X}{int(g*0.55):02X}{int(b*0.55):02X}"
-    grid_pat = ("repeating-linear-gradient(0deg,transparent,transparent 28px,"
-                "rgba(38,50,56,0.04) 28px,rgba(38,50,56,0.04) 29px),"
-                "repeating-linear-gradient(90deg,transparent,transparent 28px,"
-                "rgba(38,50,56,0.04) 28px,rgba(38,50,56,0.04) 29px)")
+    photo = _photo_url(f"{label},interior,architecture")
     return (
-        f'<div style="background:linear-gradient(145deg,{pale},{light});'
-        f'border:1px solid #D8D0C3;border-radius:10px;height:{height};'
-        f'min-height:128px;display:flex;flex-direction:column;'
-        f'align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;">'
-        f'<div style="position:absolute;inset:0;background-image:{grid_pat};pointer-events:none;"></div>'
-        f'<span style="font-size:28px;position:relative;z-index:1;opacity:0.65;">{icon}</span>'
-        f'<span style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;'
-        f'color:{icon_col};opacity:0.7;text-align:center;padding:0 14px;position:relative;z-index:1;">{label}</span>'
+        f'<div style="border:1px solid #D8D0C3;border-radius:10px;height:{height};'
+        f'min-height:128px;position:relative;overflow:hidden;'
+        f'background:#EDE8DF url({photo}) center/cover no-repeat;">'
+        f'<div style="position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(20,18,14,0.55));"></div>'
+        f'<span style="position:absolute;top:8px;left:10px;font-size:14px;opacity:0.85;'
+        f'background:rgba(255,253,247,0.9);border-radius:50%;width:24px;height:24px;'
+        f'display:flex;align-items:center;justify-content:center;">{icon}</span>'
+        f'<span style="position:absolute;bottom:8px;left:10px;right:10px;font-size:10px;font-weight:700;'
+        f'letter-spacing:2px;text-transform:uppercase;color:#FFFDF7;">{label}</span>'
         f'</div>'
     )
 
@@ -378,12 +377,15 @@ def _generated_tile(b64: str, height: str = "100%", source_label: str = "Uploade
 
 def _material_block(name: str) -> str:
     d = MATERIAL_DATA[name]
+    photo = _photo_url(f"{name},texture,material", 300, 300)
     return (
         f'<div style="flex:1;min-width:78px;">'
-        f'<div style="height:50px;background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
-        f'border-radius:7px;margin-bottom:6px;position:relative;border:1px solid rgba(0,0,0,0.06);">'
-        f'<span style="position:absolute;bottom:5px;left:8px;font-size:8px;font-weight:700;'
-        f'letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.82);">{name.upper()}</span></div>'
+        f'<div style="height:60px;background:#EDE8DF url({photo}) center/cover no-repeat;'
+        f'border-radius:7px;margin-bottom:6px;position:relative;border:1px solid rgba(0,0,0,0.1);'
+        f'box-shadow:0 1px 3px rgba(0,0,0,0.08);">'
+        f'<span style="position:absolute;bottom:4px;left:6px;right:6px;font-size:8px;font-weight:700;'
+        f'letter-spacing:1px;text-transform:uppercase;color:#FFFDF7;'
+        f'text-shadow:0 1px 2px rgba(0,0,0,0.7);">{name.upper()}</span></div>'
         f'<div style="font-size:11px;color:#3C3428;font-weight:600;margin-bottom:2px;">{d["ko"]}</div>'
         f'<div style="font-size:10px;color:#6F6A60;">{d["finish"]}</div></div>'
     )
@@ -469,10 +471,25 @@ def build_html_board(
     </p>
     <div style="width:32px;height:2px;background:{accent};border-radius:1px;margin-top:16px;"></div>
   </div>
-  <div style="display:grid;grid-template-columns:1.6fr 1fr;grid-template-rows:148px 148px;gap:10px;margin-bottom:20px;">
-    <div style="grid-column:1;grid-row:1/3;height:100%;">{hero_tile}</div>
-    <div style="grid-column:2;grid-row:1;">{mid_tile}</div>
-    <div style="grid-column:2;grid-row:2;">{bot_tile}</div>
+  <div style="position:relative;height:340px;margin-bottom:28px;padding:14px 6px;">
+    <div style="position:absolute;left:2%;top:6px;width:54%;height:308px;transform:rotate(-1.6deg);
+                box-shadow:0 6px 20px rgba(38,50,56,0.18);">
+      <div style="position:absolute;top:-10px;left:48%;width:60px;height:18px;background:rgba(240,228,200,0.85);
+                  transform:rotate(-4deg);border:1px dashed rgba(150,130,90,0.35);"></div>
+      {hero_tile}
+    </div>
+    <div style="position:absolute;right:3%;top:14px;width:40%;height:144px;transform:rotate(2.2deg);
+                box-shadow:0 5px 16px rgba(38,50,56,0.15);">
+      <div style="position:absolute;top:-8px;left:8px;width:48px;height:16px;background:rgba(240,228,200,0.85);
+                  transform:rotate(-6deg);border:1px dashed rgba(150,130,90,0.35);"></div>
+      {mid_tile}
+    </div>
+    <div style="position:absolute;right:6%;bottom:6px;width:40%;height:148px;transform:rotate(-1.4deg);
+                box-shadow:0 5px 16px rgba(38,50,56,0.15);">
+      <div style="position:absolute;top:-8px;right:14px;width:48px;height:16px;background:rgba(240,228,200,0.85);
+                  transform:rotate(5deg);border:1px dashed rgba(150,130,90,0.35);"></div>
+      {bot_tile}
+    </div>
   </div>
   <div style="background:#FFFDF7;border-radius:10px;padding:20px;margin-bottom:10px;border:1px solid #D8D0C3;">
     {_board_label("Material Palette")}
