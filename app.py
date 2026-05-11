@@ -78,7 +78,8 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
         return ""
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
            f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
-    cfg = {"temperature": 0.85, "maxOutputTokens": 800}
+    cfg = {"temperature": 0.7, "maxOutputTokens": 800,
+           "thinkingConfig": {"thinkingBudget": 0}}
     if want_json:
         cfg["responseMimeType"] = "application/json"
     body = json.dumps({"contents": [{"parts": [{"text": prompt}]}],
@@ -87,7 +88,8 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
     try:
         with _urlreq.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read().decode("utf-8"))
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        parts = data["candidates"][0]["content"]["parts"]
+        return next((p["text"].strip() for p in parts if "text" in p), "")
     except Exception as e:
         print(f"[Gemini] {e}")
         return ""
