@@ -1001,48 +1001,20 @@ button.secondary:hover { background: #F0E8DC !important; border-color: #B0A898 !
 """
 
 HEADER_HTML = """
-<div style="background:linear-gradient(160deg,#FFFDF7 0%,#F7F3EA 100%);
-            border:1px solid #D8D0C3;border-radius:14px;
-            box-shadow:0 2px 12px rgba(38,50,56,0.05);
-            padding:52px 32px 44px;margin-bottom:4px;text-align:center;">
-
-  <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;
-            color:#8A8278;margin:0 0 18px;font-weight:600;">Interior Design Studio</p>
-
-  <h1 style="font-size:36px;font-weight:300;letter-spacing:1.5px;
-             color:#263238;margin:0 0 10px;line-height:1.15;
-             font-family:'Georgia','Times New Roman',serif;">
-    AI Concept Board Generator
-  </h1>
-
-  <div style="width:32px;height:2px;background:#C57B57;border-radius:1px;margin:0 auto 22px;"></div>
-
-  <p style="font-size:13px;color:#6F6A60;max-width:520px;margin:0 auto 36px;line-height:1.9;">
-    공간 유형과 분위기를 선택하고 한국어 키워드를 입력하세요.<br>
-    3가지 이미지 프롬프트와 컨셉 보드가 자동으로 생성됩니다.
-  </p>
-
-  <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;max-width:760px;margin:0 auto;">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">⌨️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#6B6058;font-weight:600;">키워드</span>
-    </div>
-    <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">📝</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#6B6058;font-weight:600;">3 프롬프트</span>
-    </div>
-    <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#F2ECE3;border:1.5px solid #D0C8BA;display:flex;align-items:center;justify-content:center;font-size:14px;">🖼️</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#6B6058;font-weight:600;">이미지 업로드</span>
-    </div>
-    <div style="width:24px;height:1px;background:#D0C8BA;margin:0 2px 18px;"></div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#FDF0E8;border:1.5px solid #DDB898;display:flex;align-items:center;justify-content:center;font-size:14px;">🎨</div>
-      <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#C57B57;font-weight:700;">컨셉 보드</span>
-    </div>
+<div style="display:flex;align-items:center;justify-content:space-between;
+            padding:20px 28px;margin-bottom:8px;
+            background:#FFFDF7;border:1px solid #D8D0C3;border-radius:12px;">
+  <div>
+    <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;
+              color:#8A8278;margin:0 0 4px;font-weight:600;">Interior Design Studio</p>
+    <h1 style="font-size:22px;font-weight:400;letter-spacing:0.5px;
+               color:#263238;margin:0;font-family:'Georgia','Times New Roman',serif;">
+      AI Concept Board Generator
+    </h1>
   </div>
+  <p style="font-size:12px;color:#8A8278;margin:0;text-align:right;line-height:1.7;max-width:280px;">
+    공간·분위기 선택 후 Generate →<br>3개 프롬프트 + 컨셉 보드 자동 생성
+  </p>
 </div>
 """
 
@@ -1159,123 +1131,77 @@ with gr.Blocks(
 
     gr.HTML(HEADER_HTML)
 
-    # ── Input section: two-column ─────────────────────────────────────────────
     with gr.Row(equal_height=False):
 
-        with gr.Column(scale=1, min_width=240):
-            gr.HTML(_col_header("01 ·", "Project Setup"))
+        # ── LEFT SIDEBAR ──────────────────────────────────────────────────────
+        with gr.Column(scale=1, min_width=260):
             space_in = gr.Dropdown(choices=SPACE_LIST, value="Library", label="Space Type")
             mood_in  = gr.Dropdown(choices=MOOD_LIST,  value="Calm",    label="Mood")
             extra_in = gr.Textbox(
-                label="Custom Concept Keywords",
-                placeholder=(
-                    "영어 또는 한국어 자유 입력\n"
-                    "예: wave-like forms, 물결, 서가, 바이오필릭, biophilic wall"
-                ),
-                lines=4,
+                label="Custom Keywords",
+                placeholder="예: 바이오필릭, wave-like forms, 서가",
+                lines=3,
             )
             with gr.Row():
-                gen_btn   = gr.Button("Generate Concept  ✦", variant="primary")
-                reset_btn = gr.Button("↺ 초기화", variant="secondary", min_width=80)
+                gen_btn   = gr.Button("Generate  ✦", variant="primary")
+                reset_btn = gr.Button("↺", variant="secondary", min_width=48)
             status_out = gr.Markdown(value="", elem_classes=["status-msg"])
 
-        with gr.Column(scale=2):
-            gr.HTML(_col_header("02 ·", "Design Attributes"))
-            activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST, label="UX / Activity Programme")
-            material_in = gr.CheckboxGroup(choices=MATERIAL_LIST, label="Material Palette")
-            lighting_in = gr.CheckboxGroup(choices=LIGHTING_LIST, label="Lighting Strategy")
-            spatial_in  = gr.CheckboxGroup(choices=SPATIAL_LIST,  label="Volume / Spatial Quality")
+            gr.HTML(_section_header("Examples"))
+            preset_btns = []
+            for preset in PRESET_EXAMPLES:
+                btn = gr.Button(
+                    f"{preset['label']}  {preset['sub']}",
+                    elem_classes=["example-card"],
+                    size="sm",
+                )
+                preset_btns.append((btn, preset["data"]))
 
-    # ── Future settings (collapsed) ───────────────────────────────────────────
-    with gr.Accordion("🔌  Future: External Image Generation Settings", open=False):
-        gr.Markdown(
-            "_GPU 서버(ComfyUI 등)를 연결하면 3개 슬롯에 이미지를 자동 생성합니다. "
-            "현재 MVP에서는 비활성 — 아래 Concept Board 탭에서 이미지를 직접 업로드하세요._"
-        )
-        with gr.Row():
-            use_external_in = gr.Checkbox(label="Enable External Generator", value=False, scale=1)
-            external_url_in = gr.Textbox(label="Server URL", placeholder="http://192.168.0.15:8188", scale=4)
-        neg_prompt_in = gr.Textbox(
-            label="Negative Prompt",
-            placeholder="blurry, low quality, distorted, oversaturated, people, text",
-            lines=2,
-        )
-        with gr.Row():
-            steps_in   = gr.Slider(minimum=1, maximum=100, step=1,   value=20,  label="Steps")
-            cfg_in     = gr.Slider(minimum=1, maximum=20,  step=0.5, value=7.0, label="CFG Scale")
-            imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Image Size")
-            seed_in    = gr.Number(value=-1, label="Seed  (−1 = random)", precision=0)
+            with gr.Accordion("🔌 Image Generation (Future)", open=False):
+                with gr.Row():
+                    use_external_in = gr.Checkbox(label="Enable", value=False, scale=1)
+                    external_url_in = gr.Textbox(label="Server URL", placeholder="http://127.0.0.1:8188", scale=3)
+                neg_prompt_in = gr.Textbox(label="Negative Prompt", lines=2,
+                    placeholder="blurry, low quality, people, text")
+                with gr.Row():
+                    steps_in   = gr.Slider(1, 100, step=1,   value=20,  label="Steps")
+                    cfg_in     = gr.Slider(1, 20,  step=0.5, value=7.0, label="CFG")
+                with gr.Row():
+                    imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Size")
+                    seed_in    = gr.Number(value=-1, label="Seed", precision=0)
 
-    # ── Quick Examples ────────────────────────────────────────────────────────
-    gr.HTML(_section_header("Quick Examples — 클릭하면 자동 생성"))
-    with gr.Row():
-        preset_btns = []
-        for preset in PRESET_EXAMPLES:
-            btn = gr.Button(
-                f"{preset['label']}\n{preset['sub']}",
-                elem_classes=["example-card"],
-                size="sm",
-            )
-            preset_btns.append((btn, preset["data"]))
-
-    # ── Results ───────────────────────────────────────────────────────────────
-    gr.HTML(_section_header("Results"))
-    with gr.Tabs(selected=0) as results_tabs:
-
-        with gr.TabItem("📝  Image Prompts", id=0):
-            gr.Markdown("_3개 슬롯별 이미지 생성 프롬프트 — 복사해서 바로 사용하세요._")
-            main_prompt_out = gr.Textbox(
-                label="Slot 1 — Main Concept Image Prompt",
-                placeholder="전체 공간 / 건축 구성 프롬프트",
-                lines=4,
-            )
-            material_prompt_out = gr.Textbox(
-                label="Slot 2 — Material / Detail Image Prompt",
-                placeholder="소재 클로즈업 텍스처 프롬프트",
-                lines=4,
-            )
-            atmo_prompt_out = gr.Textbox(
-                label="Slot 3 — Atmosphere / Experience Image Prompt",
-                placeholder="분위기 · 조명 · 경험 프롬프트",
-                lines=4,
-            )
-
-        with gr.TabItem("🏷️  Tags", id=1):
-            tags_out = gr.Textbox(
-                label="Hashtags",
-                placeholder="디자인 해시태그가 여기 표시됩니다.",
-                lines=4,
-            )
-
-        with gr.TabItem("🇰🇷  Korean Statement", id=2):
-            korean_out = gr.Markdown(
-                value="*위에서 옵션을 선택하고 **Generate Concept** 을 클릭하면 한국어 개념 설명이 생성됩니다.*"
-            )
-
-        with gr.TabItem("🎨  Concept Board", id=3):
-            # Image uploads live here — in context of where they're used
-            gr.Markdown(
-                "_각 슬롯에 참고 이미지를 업로드하세요 (선택사항). "
-                "업로드하지 않으면 소재 플레이스홀더가 사용됩니다._",
-                elem_classes=["upload-hint"],
-            )
+        # ── RIGHT MAIN ────────────────────────────────────────────────────────
+        with gr.Column(scale=3):
             with gr.Row():
-                upload_main_in = gr.Image(
-                    label="Slot 1 — Main Concept Image",
-                    type="pil",
-                    height=180,
-                )
-                upload_material_in = gr.Image(
-                    label="Slot 2 — Material / Detail Image",
-                    type="pil",
-                    height=180,
-                )
-                upload_atmosphere_in = gr.Image(
-                    label="Slot 3 — Atmosphere / Experience Image",
-                    type="pil",
-                    height=180,
-                )
-            board_out = gr.HTML(value=BOARD_PLACEHOLDER)
+                activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST, label="UX / Activity", scale=1)
+                material_in = gr.CheckboxGroup(choices=MATERIAL_LIST, label="Material Palette", scale=1)
+            with gr.Row():
+                lighting_in = gr.CheckboxGroup(choices=LIGHTING_LIST, label="Lighting", scale=1)
+                spatial_in  = gr.CheckboxGroup(choices=SPATIAL_LIST,  label="Spatial Quality", scale=1)
+
+            with gr.Tabs(selected=0) as results_tabs:
+
+                with gr.TabItem("🎨  Concept Board", id=0):
+                    gr.Markdown(
+                        "_참고 이미지 업로드 (선택사항)_",
+                        elem_classes=["upload-hint"],
+                    )
+                    with gr.Row():
+                        upload_main_in = gr.Image(label="Slot 1 — Main", type="pil", height=160)
+                        upload_material_in = gr.Image(label="Slot 2 — Material", type="pil", height=160)
+                        upload_atmosphere_in = gr.Image(label="Slot 3 — Atmosphere", type="pil", height=160)
+                    board_out = gr.HTML(value=BOARD_PLACEHOLDER)
+
+                with gr.TabItem("📝  Prompts", id=1):
+                    main_prompt_out = gr.Textbox(label="Slot 1 — Main Concept", lines=3)
+                    material_prompt_out = gr.Textbox(label="Slot 2 — Material / Detail", lines=3)
+                    atmo_prompt_out = gr.Textbox(label="Slot 3 — Atmosphere", lines=3)
+
+                with gr.TabItem("🏷️  Tags & Korean", id=2):
+                    tags_out = gr.Textbox(label="Hashtags", lines=3)
+                    korean_out = gr.Markdown(
+                        value="*Generate 후 한국어 개념 설명이 표시됩니다.*"
+                    )
 
     # ── Event wiring ──────────────────────────────────────────────────────────
 
@@ -1293,11 +1219,11 @@ with gr.Blocks(
 
     # Generate button → run → switch to Concept Board tab
     (gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
-            .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
+            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs]))
 
     # Enter key in keyword field also triggers generation
     (extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
-             .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
+             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs]))
 
     # Reset button — clears all design inputs and uploaded images
     reset_outputs = [
@@ -1312,7 +1238,7 @@ with gr.Blocks(
     for btn, data in preset_btns:
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
-            .then(fn=lambda: gr.update(selected=3), inputs=[], outputs=[results_tabs]))
+            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs]))
 
 FORCE_CSS = """<style>
 /* Force checkbox background — overrides Gradio dark-mode stone vars */
