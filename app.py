@@ -734,18 +734,68 @@ _MAT_COLORS = {
     "Fabric": (180, 155, 115), "Metal": (150, 150, 155), "Stone": (140, 120, 100), "Brick": (180, 80, 55),
 }
 
-def suggest_materials_from_image(img, current_materials):
+def gemini_vision_tags(img):
+    if img is None or not HAS_PIL or not GEMINI_KEY:
+        return {}
+    try:
+        buf = BytesIO()
+        img.convert("RGB").resize((512, 512)).save(buf, format="JPEG", quality=80)
+        b64img = base64.b64encode(buf.getvalue()).decode("ascii")
+    except Exception:
+        return {}
+    prompt = (
+        "이 인테리어 참고 이미지를 분석해서 보이는 요소를 분류하세요. "
+        "순수 JSON으로만 응답.\n"
+        f"materials (배열, 보이는 재료 모두): {MATERIAL_LIST}\n"
+        f"lighting (배열): {LIGHTING_LIST}\n"
+        f"mood (택1 문자열): {MOOD_LIST}\n"
+        f"spatial (배열): {SPATIAL_LIST}\n"
+        "형식: {\"materials\":[],\"lighting\":[],\"mood\":\"\",\"spatial\":[]}"
+    )
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
+    body = json.dumps({
+        "contents": [{"parts": [
+            {"inline_data": {"mime_type": "image/jpeg", "data": b64img}},
+            {"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json",
+                             "temperature": 0.3, "maxOutputTokens": 400}
+    }).encode("utf-8")
+    req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+    try:
+        with _urlreq.urlopen(req, timeout=25) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        txt = data["candidates"][0]["content"]["parts"][0]["text"]
+        m = re.search(r"\{[\s\S]*\}", txt)
+        return json.loads(m.group(0) if m else txt)
+    except Exception as e:
+        print(f"[Gemini Vision] {e}")
+        return {}
+
+
+def suggest_materials_from_image(img, cur_mat, cur_light, cur_mood, cur_spatial):
     if img is None or not HAS_PIL:
-        return current_materials
+        return cur_mat, cur_light, cur_mood, cur_spatial
+    j = gemini_vision_tags(img) if GEMINI_KEY else {}
+    if j:
+        mats   = [m for m in (j.get("materials") or []) if m in MATERIAL_LIST]
+        lights = [l for l in (j.get("lighting")  or []) if l in LIGHTING_LIST]
+        spat   = [s for s in (j.get("spatial")   or []) if s in SPATIAL_LIST]
+        mood   = j.get("mood") if j.get("mood") in MOOD_LIST else cur_mood
+        gr.Info(f"AI 비전 태깅: {', '.join(mats[:3]) or '재료없음'} · {mood}")
+        merged_mat = list(dict.fromkeys(mats + list(cur_mat or [])))[:5]
+        merged_light = list(dict.fromkeys(lights + list(cur_light or [])))[:4]
+        merged_spat = list(dict.fromkeys(spat + list(cur_spatial or [])))[:4]
+        return merged_mat, merged_light, mood, merged_spat
     try:
         small = img.resize((20, 20)).convert("RGB")
         pixels = list(small.getdata())
         avg = tuple(sum(p[i] for p in pixels) // len(pixels) for i in range(3))
         ranked = sorted(_MAT_COLORS.items(), key=lambda kv: sum((avg[i]-kv[1][i])**2 for i in range(3)))
         top2 = [ranked[0][0], ranked[1][0]]
-        return list(dict.fromkeys(top2 + list(current_materials)))[:4]
+        return list(dict.fromkeys(top2 + list(cur_mat or [])))[:4], cur_light, cur_mood, cur_spatial
     except Exception:
-        return current_materials
+        return cur_mat, cur_light, cur_mood, cur_spatial
 
 
 def export_board_html(board_html):
@@ -1119,10 +1169,11 @@ with gr.Blocks(
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
 
-    # Image upload → auto-suggest materials
+    # Image upload → Gemini Vision auto-tagging (materials, lighting, mood, spatial)
     for img_in in [upload_main_in, upload_material_in, upload_atmosphere_in]:
         img_in.change(fn=suggest_materials_from_image,
-                      inputs=[img_in, material_in], outputs=[material_in])
+                      inputs=[img_in, material_in, lighting_in, mood_in, spatial_in],
+                      outputs=[material_in, lighting_in, mood_in, spatial_in])
 
     # History restore
     history_dd.change(fn=load_history_entry, inputs=[history_state, history_dd],
