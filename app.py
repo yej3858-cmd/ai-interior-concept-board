@@ -6,6 +6,8 @@ import uuid
 import copy
 import base64
 import random
+import tempfile
+import os
 from io import BytesIO
 from pathlib import Path
 
@@ -765,7 +767,24 @@ def generate_concept(
     #         warning = f"⚠️ External generation failed: {str(e)[:120]}"
     #
     future_main = future_material = future_atmosphere = None
-    # ── End [FUTURE INTEGRATION HOOK] ────────────────────────────────────────
+    warning = ""
+    if use_external and external_url and external_url.strip():
+        try:
+            workflow = _future_load_workflow()
+            if workflow:
+                w, h     = parse_image_size(img_size)
+                seed_val = int(seed) if int(seed) >= 0 else random.randint(0, 2**31 - 1)
+                neg      = neg_prompt or ""
+                wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val)
+                future_main = _future_comfyui_generate(external_url.strip(), wf1)
+                wf2 = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1)
+                future_material = _future_comfyui_generate(external_url.strip(), wf2)
+                wf3 = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2)
+                future_atmosphere = _future_comfyui_generate(external_url.strip(), wf3)
+            else:
+                warning = "⚠️ comfyui_workflow.json not found — place workflow file in app directory"
+        except Exception as e:
+            warning = f"⚠️ ComfyUI connection failed: {str(e)[:120]}"
 
     board = build_html_board(
         space, activities, materials, lighting, mood, spatial,
@@ -777,6 +796,7 @@ def generate_concept(
         uploaded_main=upload_main,
         uploaded_material=upload_material,
         uploaded_atmosphere=upload_atmosphere,
+        warning=warning,
     )
 
     n_uploads = sum(1 for x in [upload_main, upload_material, upload_atmosphere] if x is not None)
@@ -789,6 +809,74 @@ def generate_concept(
 def reset_inputs():
     """Return default values for all input fields."""
     return "Library", [], [], [], "Calm", [], "", None, None, None
+
+
+# ─── Image Auto-Tagging ───────────────────────────────────────────────────────
+
+_MAT_COLORS = {
+    "Wood":     (140, 90,  60),
+    "Concrete": (140, 140, 130),
+    "Glass":    (150, 190, 200),
+    "Fabric":   (180, 155, 115),
+    "Metal":    (150, 150, 155),
+    "Stone":    (140, 120, 100),
+    "Brick":    (180, 80,  55),
+}
+
+def suggest_materials_from_image(img, current_materials):
+    if img is None or not HAS_PIL:
+        return current_materials
+    try:
+        small = img.resize((20, 20)).convert("RGB")
+        pixels = list(small.getdata())
+        avg = tuple(sum(p[i] for p in pixels) // len(pixels) for i in range(3))
+        ranked = sorted(_MAT_COLORS.items(),
+                        key=lambda kv: sum((avg[i]-kv[1][i])**2 for i in range(3)))
+        top2 = [ranked[0][0], ranked[1][0]]
+        return list(dict.fromkeys(top2 + list(current_materials)))[:4]
+    except Exception:
+        return current_materials
+
+
+# ─── Export ───────────────────────────────────────────────────────────────────
+
+def export_board_html(board_html):
+    if not board_html or "dashed" in board_html:
+        return None
+    html = (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<title>AI Interior Concept Board</title>"
+        "<style>body{margin:0;padding:20px;background:#F7F3EA;"
+        "font-family:'Helvetica Neue',Arial,sans-serif;}</style>"
+        f"</head><body>{board_html}</body></html>"
+    )
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".html",
+                                      delete=False, encoding="utf-8")
+    tmp.write(html)
+    tmp.close()
+    return tmp.name
+
+
+# ─── History ──────────────────────────────────────────────────────────────────
+
+def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko):
+    entry = {
+        "key":   f"{space} · {mood} — {time.strftime('%H:%M')}",
+        "board": board, "main": main_p, "mat": mat_p,
+        "atmo":  atmo_p, "tags": tags, "ko": ko,
+    }
+    return ([entry] + history)[:5]
+
+
+def load_history_entry(history, key):
+    for e in history:
+        if e["key"] == key:
+            return e["board"], e["main"], e["mat"], e["atmo"], e["tags"], e["ko"]
+    return (gr.update(),) * 6
+
+
+def history_choices(history):
+    return gr.update(choices=[e["key"] for e in history], value=None)
 
 
 # ─── Styling ──────────────────────────────────────────────────────────────────
@@ -1157,6 +1245,10 @@ with gr.Blocks(
                 )
                 preset_btns.append((btn, preset["data"]))
 
+            gr.HTML(_section_header("History"))
+            history_state = gr.State([])
+            history_dd = gr.Dropdown(label="Recent Generations", choices=[], interactive=True)
+
             with gr.Accordion("🔌 Image Generation (Future)", open=False):
                 with gr.Row():
                     use_external_in = gr.Checkbox(label="Enable", value=False, scale=1)
@@ -1191,6 +1283,9 @@ with gr.Blocks(
                         upload_material_in = gr.Image(label="Slot 2 — Material", type="pil", height=160)
                         upload_atmosphere_in = gr.Image(label="Slot 3 — Atmosphere", type="pil", height=160)
                     board_out = gr.HTML(value=BOARD_PLACEHOLDER)
+                    with gr.Row():
+                        export_btn  = gr.Button("Export HTML", size="sm", variant="secondary")
+                        export_file = gr.File(label="Download", visible=False, scale=2)
 
                 with gr.TabItem("📝  Prompts", id=1):
                     main_prompt_out = gr.Textbox(label="Slot 1 — Main Concept", lines=3)
@@ -1217,13 +1312,14 @@ with gr.Blocks(
         tags_out, korean_out, board_out, status_out,
     ]
 
-    # Generate button → run → switch to Concept Board tab
-    (gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
-            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs]))
-
     # Enter key in keyword field also triggers generation
     (extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
-             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs]))
+             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+             .then(fn=add_to_history,
+                   inputs=[history_state, space_in, mood_in, board_out,
+                           main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, korean_out],
+                   outputs=[history_state])
+             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
 
     # Reset button — clears all design inputs and uploaded images
     reset_outputs = [
@@ -1238,7 +1334,38 @@ with gr.Blocks(
     for btn, data in preset_btns:
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
-            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs]))
+            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+            .then(fn=add_to_history,
+                  inputs=[history_state, space_in, mood_in, board_out,
+                          main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, korean_out],
+                  outputs=[history_state])
+            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+
+    # Auto-tag from uploaded images
+    for img_in in [upload_main_in, upload_material_in, upload_atmosphere_in]:
+        img_in.change(fn=suggest_materials_from_image,
+                      inputs=[img_in, material_in], outputs=[material_in])
+
+    # History: update dropdown after generate
+    (gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
+            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+            .then(fn=add_to_history,
+                  inputs=[history_state, space_in, mood_in, board_out,
+                          main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, korean_out],
+                  outputs=[history_state])
+            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+
+    # History: load selected entry
+    history_dd.change(
+        fn=load_history_entry,
+        inputs=[history_state, history_dd],
+        outputs=[board_out, main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, korean_out],
+    )
+
+    # Export
+    export_btn.click(fn=export_board_html, inputs=[board_out],
+                     outputs=[export_file])
+    export_btn.click(fn=lambda: gr.update(visible=True), inputs=[], outputs=[export_file])
 
 FORCE_CSS = """<style>
 /* Force checkbox background — overrides Gradio dark-mode stone vars */
