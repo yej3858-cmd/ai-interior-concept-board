@@ -998,81 +998,69 @@ def history_choices(history):
 
 CSS = """
 :root {
-    --body-background-fill: #F7F3EA;
-    --block-background-fill: #FFFDF7;
-    --block-border-color: #D8D0C3;
-    --block-border-width: 1px;
-    --block-radius: 12px;
-    --block-shadow: 0 1px 8px rgba(38,50,56,0.05);
-    --block-label-text-color: #3C3428;
-    --block-label-text-size: 11px;
-    --block-label-text-weight: 700;
-    --block-title-text-color: #3C3428;
-    --block-title-text-weight: 700;
-    --input-background-fill: #FFFDF7;
-    --input-border-color: #D0C8BA;
-    --input-border-color-focus: #C57B57;
-    --input-text-size: 13px;
-    --checkbox-label-background-fill: #F2ECE3;
-    --checkbox-label-background-fill-hover: #E4EED8;
-    --checkbox-label-background-fill-selected: #4E7040;
-    --checkbox-label-border-color: #C8BCAC;
-    --checkbox-label-border-color-hover: #7A9868;
-    --checkbox-label-border-color-selected: #3C5C30;
-    --checkbox-label-text-color: #1E1A14;
-    --checkbox-label-text-color-selected: #FFFFFF;
-    --button-primary-background-fill: #C57B57;
-    --button-primary-background-fill-hover: #A86540;
-    --button-primary-text-color: #FFFDF7;
-    --button-primary-border-color: transparent;
-    --button-secondary-background-fill: #FFFDF7;
-    --button-secondary-background-fill-hover: #F0E8DC;
-    --button-secondary-text-color: #4A4038;
-    --button-secondary-border-color: #D0C8BA;
-    --color-accent: #C57B57;
-    --slider-color: #6B8A5E;
+    --cream: #F7F2E8;
+    --ivory: #FFFDF7;
+    --border: #DDD5C5;
+    --brown: #2E2418;
+    --muted: #7A7268;
+    --terra: #C57B57;
+    --olive: #4E7040;
+    --olive-light: #6B8A5E;
 }
-body, .gradio-container { background: #F7F3EA !important; font-family: 'Helvetica Neue', Arial, sans-serif !important; }
-.gradio-container { max-width: 1100px !important; margin: 0 auto !important; }
+body, .gradio-container { background: var(--cream) !important; font-family: 'Helvetica Neue', Arial, sans-serif !important; }
+.gradio-container { max-width: 1280px !important; margin: 0 auto !important; }
 footer { display: none !important; }
 .contain, .gap, .panel { background: transparent !important; }
-.block, .form { background: #FFFDF7 !important; border: 1px solid #D8D0C3 !important; border-radius: 12px !important; box-shadow: 0 1px 8px rgba(38,50,56,0.05) !important; }
+
+/* ── Panels ─────────────────────────────────────────────── */
+.left-panel > .block, .left-panel .form { background: var(--ivory) !important; }
+.left-panel { background: var(--ivory) !important; border-right: 1px solid var(--border) !important; padding: 0 !important; }
+
+/* ── Block containers ───────────────────────────────────── */
+.block, .form {
+    background: var(--ivory) !important; border: 1px solid var(--border) !important;
+    border-radius: 12px !important; box-shadow: 0 1px 6px rgba(38,50,56,0.04) !important;
+}
+
+/* ── Labels ─────────────────────────────────────────────── */
 .block .label-wrap > span, label > span, .block label > span, fieldset legend,
-.block .label-wrap > label, .block .label-wrap label, .label-wrap label,
 .block > label, .form > label, .block label, .wrap label {
     font-size: 10px !important; font-weight: 700 !important; letter-spacing: 2px !important;
     text-transform: uppercase !important; color: #3C3428 !important;
 }
+
+/* ── Inputs ─────────────────────────────────────────────── */
 textarea, input[type="text"], input[type="number"] {
-    background: #FFFDF7 !important; border: 1px solid #D0C8BA !important;
-    color: #1E1A14 !important; border-radius: 8px !important; font-size: 13px !important; line-height: 1.7 !important;
+    background: var(--ivory) !important; border: 1px solid #D0C8BA !important;
+    color: var(--brown) !important; border-radius: 8px !important;
+    font-size: 13px !important; line-height: 1.7 !important;
 }
 textarea:focus, input[type="text"]:focus, input[type="number"]:focus {
-    border-color: #C57B57 !important; outline: none !important; box-shadow: 0 0 0 3px rgba(197,123,87,0.13) !important;
+    border-color: var(--terra) !important; outline: none !important;
+    box-shadow: 0 0 0 3px rgba(197,123,87,0.13) !important;
 }
 textarea::placeholder, input::placeholder { color: #B8B0A3 !important; font-style: italic !important; }
-.wrap-inner, .multiselect, .wrap { background: #FFFDF7 !important; border-color: #D0C8BA !important; color: #1E1A14 !important; }
-.token { background: #EDE8DF !important; border: 1px solid #D0C8BA !important; color: #1E1A14 !important; }
-.list-items, .options { background: #FFFDF7 !important; border: 1px solid #D0C8BA !important; border-radius: 8px !important; box-shadow: 0 4px 18px rgba(38,50,56,0.10) !important; }
-.item, .list-items li { color: #1E1A14 !important; font-size: 13px !important; }
+.wrap-inner, .multiselect, .wrap { background: var(--ivory) !important; border-color: #D0C8BA !important; color: var(--brown) !important; }
+.token { background: #EDE8DF !important; border: 1px solid #D0C8BA !important; color: var(--brown) !important; }
+.list-items, .options { background: var(--ivory) !important; border: 1px solid #D0C8BA !important; border-radius: 8px !important; box-shadow: 0 4px 18px rgba(38,50,56,0.10) !important; }
+.item, .list-items li { color: var(--brown) !important; font-size: 13px !important; }
 .item:hover, .item.selected, .list-items li:hover { background: #F0EAE0 !important; }
-.checkbox-group { gap: 6px !important; flex-wrap: wrap !important; padding: 4px 0 6px !important; }
+
+/* ── Checkbox pills ─────────────────────────────────────── */
+.checkbox-group { gap: 5px !important; flex-wrap: wrap !important; padding: 4px 0 6px !important; }
 label.checkbox-label, .checkbox-label {
     background: #F2ECE3 !important; border: 1.5px solid #C8BCAC !important; border-radius: 20px !important;
-    padding: 6px 14px !important; color: #1E1A14 !important; font-size: 12.5px !important;
+    padding: 5px 13px !important; color: var(--brown) !important; font-size: 12px !important;
     font-weight: 500 !important; cursor: pointer !important;
     transition: background 0.12s, border-color 0.12s, color 0.12s !important;
     line-height: 1.5 !important; margin: 2px 1px !important; white-space: nowrap !important;
     user-select: none !important; display: inline-flex !important; align-items: center !important;
 }
-label.checkbox-label span, .checkbox-label span { color: #1E1A14 !important; }
-label.checkbox-label:hover, .checkbox-label:hover { background: #E4EED8 !important; border-color: #7A9868 !important; color: #162410 !important; }
-label.checkbox-label:hover span, .checkbox-label:hover span { color: #162410 !important; }
-label.checkbox-label.selected, .checkbox-label.selected,
+label.checkbox-label span, .checkbox-label span { color: var(--brown) !important; }
+label.checkbox-label:hover, .checkbox-label:hover { background: #E4EED8 !important; border-color: #7A9868 !important; }
 label.checkbox-label:has(input[type="checkbox"]:checked), .checkbox-label:has(input[type="checkbox"]:checked) {
-    background: #4E7040 !important; border-color: #3C5C30 !important; color: #FFFFFF !important; font-weight: 700 !important;
+    background: var(--olive) !important; border-color: #3C5C30 !important; color: #FFFFFF !important; font-weight: 700 !important;
 }
-label.checkbox-label.selected span, .checkbox-label.selected span,
 label.checkbox-label:has(input[type="checkbox"]:checked) span,
 .checkbox-label:has(input[type="checkbox"]:checked) span { color: #FFFFFF !important; }
 label.checkbox-label input[type="checkbox"], .checkbox-label input[type="checkbox"] {
@@ -1080,67 +1068,92 @@ label.checkbox-label input[type="checkbox"], .checkbox-label input[type="checkbo
     width: 0 !important; height: 0 !important; margin: 0 !important; padding: 0 !important;
     border: none !important; opacity: 0 !important; pointer-events: none !important; position: absolute !important;
 }
-input[type="range"] { accent-color: #6B8A5E !important; }
+
+/* ── Sliders ─────────────────────────────────────────────── */
+input[type="range"] { accent-color: var(--olive-light) !important; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
 button.primary, .btn-primary {
-    background: #C57B57 !important; background-image: none !important; color: #FFFDF7 !important;
-    border: none !important; border-radius: 9px !important; font-size: 14px !important;
-    font-weight: 700 !important; letter-spacing: 0.4px !important;
-    box-shadow: 0 3px 12px rgba(197,123,87,0.30) !important; transition: background 0.2s, box-shadow 0.2s !important;
+    background: var(--terra) !important; background-image: none !important; color: var(--ivory) !important;
+    border: none !important; border-radius: 10px !important; font-size: 14px !important;
+    font-weight: 700 !important; letter-spacing: 0.5px !important;
+    box-shadow: 0 3px 12px rgba(197,123,87,0.30) !important;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.15s !important;
 }
-button.primary:hover { background: #A86540 !important; box-shadow: 0 5px 18px rgba(197,123,87,0.40) !important; }
+button.primary:hover { background: #A86540 !important; box-shadow: 0 5px 18px rgba(197,123,87,0.40) !important; transform: translateY(-1px) !important; }
 button.secondary {
-    background: #FFFDF7 !important; border: 1.5px solid #D0C8BA !important; color: #4A4038 !important;
-    border-radius: 9px !important; font-size: 13px !important; font-weight: 500 !important;
+    background: var(--ivory) !important; border: 1.5px solid #D0C8BA !important; color: #4A4038 !important;
+    border-radius: 10px !important; font-size: 13px !important; font-weight: 500 !important;
 }
 button.secondary:hover { background: #F0E8DC !important; border-color: #B0A898 !important; }
-.status-ok  { color: #4E7040 !important; font-size: 13px !important; font-weight: 600 !important; }
-.status-msg .prose p { color: #4E7040 !important; font-weight: 600 !important; margin: 0 !important; }
+
+/* ── Status ─────────────────────────────────────────────── */
+.status-msg .prose p { color: var(--olive) !important; font-weight: 600 !important; margin: 0 !important; font-size: 12px !important; }
+
+/* ── Example cards ──────────────────────────────────────── */
 .example-card { flex: 1 !important; min-width: 0 !important; }
 .example-card > .wrap, .example-card > div { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
 .example-card button {
-    width: 100% !important; background: #FFFDF7 !important; border: 1.5px solid #D8D0C3 !important;
+    width: 100% !important; background: var(--ivory) !important; border: 1.5px solid var(--border) !important;
     border-radius: 10px !important; color: #2A2218 !important; font-size: 12px !important;
-    font-weight: 600 !important; padding: 12px 14px !important; min-height: 48px !important;
+    font-weight: 600 !important; padding: 11px 14px !important; min-height: 44px !important;
     height: auto !important; text-align: left !important; white-space: normal !important;
-    line-height: 1.45 !important; box-shadow: 0 1px 4px rgba(38,50,56,0.06) !important;
+    line-height: 1.45 !important; box-shadow: 0 1px 4px rgba(38,50,56,0.05) !important;
     transition: all 0.15s ease !important; cursor: pointer !important; margin-bottom: 6px !important;
 }
-.example-card button:hover { background: #FDF5EE !important; border-color: #C57B57 !important; color: #6B2E08 !important; box-shadow: 0 3px 12px rgba(197,123,87,0.15) !important; }
-.upload-hint .prose p { color: #7A7268 !important; font-size: 12px !important; }
+.example-card button:hover { background: #FDF5EE !important; border-color: var(--terra) !important; color: #6B2E08 !important; box-shadow: 0 3px 12px rgba(197,123,87,0.15) !important; }
+
+/* ── Tabs ───────────────────────────────────────────────── */
 .tabs { border: none !important; background: transparent !important; }
-.tab-nav { background: transparent !important; border-bottom: 1.5px solid #D0C8BA !important; padding: 0 !important; }
-.tab-nav button { background: transparent !important; border: none !important; border-bottom: 3px solid transparent !important; border-radius: 0 !important; color: #7A7268 !important; font-size: 13px !important; font-weight: 500 !important; padding: 13px 24px !important; margin: 0 !important; }
-.tab-nav button:hover { color: #1E1A14 !important; }
-.tab-nav button.selected { color: #1E1A14 !important; font-weight: 700 !important; border-bottom-color: #C57B57 !important; }
-.tabitem { background: transparent !important; border: none !important; padding: 20px 0 0 !important; }
-.accordion { border: 1px solid #D0C8BA !important; border-radius: 12px !important; background: #FFFDF7 !important; overflow: hidden !important; }
-.accordion > .label-wrap { padding: 14px 18px !important; }
-.accordion > .label-wrap span { font-size: 13px !important; font-weight: 600 !important; color: #3C3428 !important; letter-spacing: 0 !important; text-transform: none !important; }
-.prose, .md { color: #1E1A14 !important; }
-.prose p { color: #2A2620 !important; line-height: 1.9 !important; }
-.prose em { color: #6F6A60 !important; }
+.tab-nav { background: transparent !important; border-bottom: 1.5px solid var(--border) !important; padding: 0 !important; }
+.tab-nav button { background: transparent !important; border: none !important; border-bottom: 3px solid transparent !important; border-radius: 0 !important; color: var(--muted) !important; font-size: 13px !important; font-weight: 500 !important; padding: 12px 22px !important; margin: 0 !important; }
+.tab-nav button:hover { color: var(--brown) !important; }
+.tab-nav button.selected { color: var(--brown) !important; font-weight: 700 !important; border-bottom-color: var(--terra) !important; }
+.tabitem { background: transparent !important; border: none !important; padding: 18px 0 0 !important; }
+
+/* ── Upload section ─────────────────────────────────────── */
+.upload-section-header { margin-bottom: 12px !important; }
+
+/* ── Image gen settings card ────────────────────────────── */
+.gen-settings .block { background: #F5EFE6 !important; border-color: #DDD3C0 !important; }
+
+/* ── Markdown ───────────────────────────────────────────── */
+.prose, .md { color: var(--brown) !important; }
+.prose p { color: #2A2620 !important; line-height: 1.95 !important; }
+.prose em { color: var(--muted) !important; }
+
+/* ── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #F7F3EA; }
+::-webkit-scrollbar-track { background: var(--cream); }
 ::-webkit-scrollbar-thumb { background: #D0C8BA; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #B8B0A3; }
 """
 
 HEADER_HTML = """
-<div style="display:flex;align-items:center;justify-content:space-between;
-            padding:20px 28px;margin-bottom:8px;
-            background:#FFFDF7;border:1px solid #D8D0C3;border-radius:12px;">
+<div style="display:flex;align-items:flex-end;justify-content:space-between;
+            padding:24px 32px 20px;margin-bottom:0;
+            background:#FFFDF7;border:1px solid #DDD5C5;border-radius:14px 14px 0 0;
+            border-bottom:none;">
   <div>
-    <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;
-              color:#8A8278;margin:0 0 4px;font-weight:600;">Interior Design Studio</p>
-    <h1 style="font-size:22px;font-weight:400;letter-spacing:0.5px;
-               color:#263238;margin:0;font-family:'Georgia','Times New Roman',serif;">
-      AI Concept Board Generator
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;
+              color:#A09888;margin:0 0 6px;font-weight:700;
+              font-family:'Helvetica Neue',Arial,sans-serif;">Interior Design Studio</p>
+    <h1 style="font-size:26px;font-weight:300;letter-spacing:0.3px;
+               color:#1E1A14;margin:0;font-family:'Georgia','Times New Roman',serif;
+               line-height:1.2;">
+      AI Concept Board <em style="font-style:italic;color:#7A7268;">Generator</em>
     </h1>
   </div>
-  <p style="font-size:12px;color:#8A8278;margin:0;text-align:right;line-height:1.7;max-width:280px;">
-    Select space &amp; mood → Generate →<br>3 prompts + concept board auto-generated
-  </p>
+  <div style="text-align:right;">
+    <p style="font-size:11px;color:#9A9288;margin:0;line-height:1.8;
+              font-family:'Helvetica Neue',Arial,sans-serif;">
+      Space &amp; mood → Generate → 3 image prompts<br>
+      <span style="color:#C57B57;">✶ AI-powered concept board</span>
+    </p>
+  </div>
 </div>
+<div style="height:3px;background:linear-gradient(90deg,#C57B57 0%,#D4A574 40%,#6B8A5E 100%);
+            margin-bottom:20px;border-radius:0 0 4px 4px;border:1px solid #DDD5C5;border-top:none;"></div>
 """
 
 
@@ -1164,17 +1177,21 @@ def _col_header(number: str, title: str) -> str:
 
 
 BOARD_PLACEHOLDER = """
-<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3EA;
-            padding:56px 40px;border-radius:14px;border:1.5px dashed #D0C8BA;
-            text-align:center;color:#8A8278;">
-  <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;
-            margin:0 0 18px;font-weight:600;color:#C0B8B0;">Interior Concept Board</p>
-  <div style="font-size:44px;margin-bottom:20px;opacity:0.45;">🏛️</div>
-  <p style="font-size:15px;font-family:'Georgia',serif;font-weight:300;
-            color:#9A9288;line-height:2.0;margin:0;">
-    Set space &amp; mood above, then click<br>
-    <span style="color:#C57B57;font-weight:600;">Generate Concept ✶</span><br>
-    or choose an example card below.
+<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:linear-gradient(160deg,#F9F5ED,#F2EBE0);
+            padding:72px 40px;border-radius:14px;border:1.5px dashed #D0C8BA;
+            text-align:center;color:#8A8278;min-height:340px;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;">
+  <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;
+            margin:0 0 24px;font-weight:700;color:#C0B8B0;font-family:'Helvetica Neue',sans-serif;">
+    Interior Concept Board
+  </p>
+  <div style="font-size:48px;margin-bottom:24px;opacity:0.35;">🏛</div>
+  <p style="font-size:16px;font-family:'Georgia',serif;font-weight:300;
+            color:#9A9288;line-height:2.1;margin:0 0 8px;">
+    Configure your space parameters, then click
+  </p>
+  <p style="font-size:18px;font-family:'Georgia',serif;font-weight:400;color:#C57B57;margin:0;">
+    Generate Concept ✶
   </p>
 </div>
 """
