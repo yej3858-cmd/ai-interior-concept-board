@@ -689,76 +689,85 @@ def build_html_board(
                           f'font-size:12px;color:#8B4A2A;line-height:1.6;">{warning}</div>')
     mood_label = f"{mood} · {md['en_adj'].split(',')[0].strip().title()}"
     return f"""
-<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3EA;
-            padding:40px;border-radius:14px;max-width:900px;margin:0 auto;
-            box-sizing:border-box;color:#263238;border:1px solid #D8D0C3;
-            box-shadow:0 2px 20px rgba(38,50,56,0.06);">
-  {warning_banner}
-  <div style="margin-bottom:30px;padding-bottom:22px;border-bottom:1px solid #D8D0C3;">
-    <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;
-              color:#9A9288;margin:0 0 12px;font-weight:600;">
+<div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#FFFFFF;
+            border-radius:16px;max-width:960px;margin:0 auto;
+            box-sizing:border-box;color:#1E1A14;border:1px solid #E0D8CC;
+            box-shadow:0 4px 32px rgba(38,50,56,0.08);overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:32px 36px 24px;border-bottom:1px solid #EDE6DA;">
+    {warning_banner}
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#A09888;margin:0 0 14px;font-weight:700;">
       Interior Concept Board &nbsp;·&nbsp; {space or 'Interior Space'}
     </p>
-    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px;">
-      <h1 style="font-size:28px;font-weight:300;letter-spacing:0.5px;margin:0;
-                 color:#263238;font-family:'Georgia','Times New Roman',serif;">{sp['ko']}</h1>
-      <span style="display:inline-block;width:1px;height:22px;background:#D8D0C3;"></span>
-      <span style="font-size:14px;color:#6F6A60;font-weight:400;">{mood_label}</span>
+    <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+      <h1 style="font-size:36px;font-weight:300;letter-spacing:-0.5px;margin:0;
+                 color:#1E1A14;font-family:'Georgia','Times New Roman',serif;">{sp['ko']}</h1>
+      <span style="font-size:15px;color:#7A7268;font-weight:400;letter-spacing:0.3px;">{mood_label}</span>
     </div>
-    <p style="font-size:12px;color:#6F6A60;margin:0;line-height:1.7;">
+    <p style="font-size:12px;color:#8A8278;margin:0 0 16px;line-height:1.6;letter-spacing:0.3px;">
       {sp['en_char'].replace(',', ' &nbsp;·&nbsp;')}
     </p>
-    <div style="width:32px;height:2px;background:{accent};border-radius:1px;margin-top:16px;"></div>
+    <div style="width:40px;height:3px;background:{accent};border-radius:2px;"></div>
   </div>
-  <div style="position:relative;height:340px;margin-bottom:28px;padding:14px 6px;">
-    <div style="position:absolute;left:2%;top:6px;width:54%;height:308px;transform:rotate(-1.6deg);
-                box-shadow:0 6px 20px rgba(38,50,56,0.18);">
-      <div style="position:absolute;top:-10px;left:48%;width:60px;height:18px;background:rgba(240,228,200,0.85);
-                  transform:rotate(-4deg);border:1px dashed rgba(150,130,90,0.35);"></div>
-      {hero_tile}
-    </div>
-    <div style="position:absolute;right:3%;top:14px;width:40%;height:144px;transform:rotate(2.2deg);
-                box-shadow:0 5px 16px rgba(38,50,56,0.15);">
-      <div style="position:absolute;top:-8px;left:8px;width:48px;height:16px;background:rgba(240,228,200,0.85);
-                  transform:rotate(-6deg);border:1px dashed rgba(150,130,90,0.35);"></div>
-      {mid_tile}
-    </div>
-    <div style="position:absolute;right:6%;bottom:6px;width:40%;height:148px;transform:rotate(-1.4deg);
-                box-shadow:0 5px 16px rgba(38,50,56,0.15);">
-      <div style="position:absolute;top:-8px;right:14px;width:48px;height:16px;background:rgba(240,228,200,0.85);
-                  transform:rotate(5deg);border:1px dashed rgba(150,130,90,0.35);"></div>
-      {bot_tile}
+
+  <!-- DESIGN INTENT -->
+  <div style="padding:28px 36px;background:linear-gradient(135deg,#FFFDF7,#FBF4EA);border-bottom:1px solid #EDE6DA;">
+    <div style="display:flex;align-items:flex-start;gap:16px;">
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:{accent};
+                  display:flex;align-items:center;justify-content:center;margin-top:2px;">
+        <span style="font-size:16px;">✦</span>
+      </div>
+      <div style="flex:1;">
+        <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 12px;font-weight:700;">Design Intent</p>
+        <p style="font-size:15px;color:#2E2418;line-height:2.1;margin:0;font-family:'Georgia','Times New Roman',serif;font-weight:400;">{ko_html}</p>
+      </div>
     </div>
   </div>
-  {palette_html}
-  <div style="background:#FFFDF7;border-radius:10px;padding:20px;margin-bottom:10px;border:1px solid #D8D0C3;">
-    {_board_label("Material Palette")}
-    <div style="display:flex;gap:12px;flex-wrap:wrap;">{mat_blocks}</div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-    <div style="background:#FFFDF7;border-radius:10px;padding:16px;border:1px solid #D8D0C3;">
-      {_board_label("UX Activity")}<div style="line-height:2;">{act_chips}</div></div>
-    <div style="background:#FFFDF7;border-radius:10px;padding:16px;border:1px solid #D8D0C3;">
-      {_board_label("Lighting")}<div style="line-height:2;">{lit_chips}</div></div>
-    <div style="background:#FFFDF7;border-radius:10px;padding:16px;border:1px solid #D8D0C3;">
-      {_board_label("Spatial Quality")}<div style="line-height:2;">{spa_chips}</div></div>
-  </div>
-  {custom_section}
-  <div style="background:linear-gradient(135deg,#FFFDF7,#FBF5EC);border-radius:12px;padding:28px 32px;margin-bottom:12px;
-              border:1px solid #D8D0C3;border-left:4px solid {accent};
-              box-shadow:0 2px 12px rgba(197,123,87,0.07);">
-    <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 16px;font-weight:700;">Design Intent</p>
-    <p style="font-size:15px;color:#2E2418;line-height:2.1;margin:0;font-family:'Georgia','Times New Roman',serif;font-weight:400;">{ko_html}</p>
-  </div>
-  <div style="background:#FFFDF7;border-radius:10px;padding:16px;margin-bottom:10px;border:1px solid #D8D0C3;">
-    {_board_label("Tags")}<div style="line-height:2.2;">{tag_chips}</div>
-  </div>
-  <div style="border-radius:10px;padding:16px;border:1px solid #D8D0C3;background:rgba(232,216,195,0.18);">
-    {_board_label("Main Image Prompt Reference")}
+
+  <!-- MAIN IMAGE PROMPT -->
+  <div style="padding:16px 36px;background:#F9F4EC;border-bottom:1px solid #EDE6DA;">
+    <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 8px;font-weight:700;">Main Image Prompt</p>
     <p style="font-size:12px;color:#6F6A60;margin:0;line-height:1.8;font-style:italic;">&ldquo;{main_prompt}&rdquo;</p>
   </div>
-  <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #D8D0C3;">
-    <p style="font-size:9px;letter-spacing:3.5px;text-transform:uppercase;color:#C8C4BC;margin:0;">AI Interior Concept Board Generator</p>
+
+  <!-- IMAGE GRID -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:240px 240px;gap:3px;background:#E0D8CC;">
+    <div style="grid-row:1/3;overflow:hidden;position:relative;">{hero_tile}</div>
+    <div style="overflow:hidden;position:relative;">{mid_tile}</div>
+    <div style="overflow:hidden;position:relative;">{bot_tile}</div>
+  </div>
+
+  <!-- COLOR + MATERIAL -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #EDE6DA;">
+    <div style="padding:20px 24px;border-right:1px solid #EDE6DA;">
+      {palette_html}
+    </div>
+    <div style="padding:20px 24px;">
+      {_board_label("Material Palette")}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">{mat_blocks}</div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY / LIGHTING / SPATIAL -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid #EDE6DA;">
+    <div style="padding:18px 20px;border-right:1px solid #EDE6DA;">
+      {_board_label("UX Activity")}<div style="line-height:2;">{act_chips}</div></div>
+    <div style="padding:18px 20px;border-right:1px solid #EDE6DA;">
+      {_board_label("Lighting")}<div style="line-height:2;">{lit_chips}</div></div>
+    <div style="padding:18px 20px;">
+      {_board_label("Spatial Quality")}<div style="line-height:2;">{spa_chips}</div></div>
+  </div>
+
+  <!-- CUSTOM + TAGS -->
+  {f'<div style="padding:18px 24px;border-bottom:1px solid #EDE6DA;">{custom_section}</div>' if custom_descriptors else ''}
+  <div style="padding:18px 24px;border-bottom:1px solid #EDE6DA;">
+    {_board_label("Tags")}<div style="line-height:2.2;">{tag_chips}</div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding:14px 24px;text-align:center;background:#F9F4EC;">
+    <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#C8C4BC;margin:0;">AI Interior Concept Board Generator</p>
   </div>
 </div>
 """
@@ -1306,30 +1315,18 @@ with gr.Blocks(
             with gr.Tabs(selected=0) as results_tabs:
 
                 with gr.TabItem("🎨  Concept Board", id=0):
-                    gr.HTML("""
-                    <div style="margin:0 0 12px;padding:16px 20px;background:#FFFDF7;
-                                border:1px solid #DDD5C5;border-radius:10px;">
-                      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;
-                                color:#A09888;margin:0 0 10px;font-weight:700;">Reference Images · Optional</p>
-                      <p style="font-size:12px;color:#7A7268;margin:0;line-height:1.7;">
-                        Upload reference photos to use as image slots on the board.
-                        Each slot has a role — <strong style="color:#3C3428;">Main view</strong>,
-                        <strong style="color:#3C3428;">Material detail</strong>, and
-                        <strong style="color:#3C3428;">Atmosphere/lighting</strong>.
-                        Leave empty to auto-generate via AI.
-                      </p>
-                    </div>
-                    """)
-                    with gr.Row():
-                        upload_main_in       = gr.Image(
-                            label="Slot 1 · Main View — hero shot, wide angle",
-                            type="pil", height=150)
-                        upload_material_in   = gr.Image(
-                            label="Slot 2 · Material — texture, surface detail",
-                            type="pil", height=150)
-                        upload_atmosphere_in = gr.Image(
-                            label="Slot 3 · Atmosphere — lighting, mood",
-                            type="pil", height=150)
+                    with gr.Accordion("📎 Reference Images (optional)", open=False):
+                        gr.HTML('<p style="font-size:12px;color:#7A7268;margin:0 0 12px;line-height:1.7;">Upload reference photos — leave empty to auto-generate via AI. Each slot has a role: <strong>Main view</strong>, <strong>Material detail</strong>, <strong>Atmosphere</strong>.</p>')
+                        with gr.Row():
+                            upload_main_in       = gr.Image(
+                                label="Slot 1 · Main View",
+                                type="pil", height=140)
+                            upload_material_in   = gr.Image(
+                                label="Slot 2 · Material Detail",
+                                type="pil", height=140)
+                            upload_atmosphere_in = gr.Image(
+                                label="Slot 3 · Atmosphere",
+                                type="pil", height=140)
 
                     board_out = gr.HTML(value=BOARD_PLACEHOLDER)
 
