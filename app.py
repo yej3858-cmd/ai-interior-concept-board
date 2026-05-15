@@ -270,6 +270,11 @@ def _future_load_workflow():
 
 def _future_patch_workflow(workflow, pos_prompt, neg_prompt, width, height, steps, cfg, seed):
     wf = copy.deepcopy(workflow)
+    # FLUX models require cfg=1.0 — detect by checkpoint name
+    is_flux = any("flux" in str(node.get("inputs", {}).get("ckpt_name", "")).lower()
+                  for node in wf.values())
+    if is_flux:
+        cfg = 1.0
     pos_id = neg_id = latent_id = None
     for node_id, node in wf.items():
         ct  = node.get("class_type", "")
