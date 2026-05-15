@@ -1031,16 +1031,35 @@ footer { display: none !important; }
 .contain, .gap, .panel { background: transparent !important; }
 
 /* ── Panels ─────────────────────────────────────────────── */
-.left-panel > .block, .left-panel .form { background: var(--ivory) !important; }
-.left-panel { background: var(--ivory) !important; border-right: 1px solid var(--border) !important; padding: 0 !important; }
+.left-panel { background: #FFFDF7 !important; border-right: 1px solid var(--border) !important; padding: 0 !important; }
+/* flatten individual blocks inside left panel — no nested box */
+.left-panel .block, .left-panel .form {
+    background: transparent !important; border: none !important;
+    border-radius: 0 !important; box-shadow: none !important;
+}
 
-/* ── Block containers ───────────────────────────────────── */
+/* ── Block containers (right panel only) ────────────────── */
+.right-panel .block, .right-panel .form {
+    background: var(--ivory) !important; border: 1px solid var(--border) !important;
+    border-radius: 12px !important; box-shadow: 0 1px 6px rgba(38,50,56,0.04) !important;
+}
 .block, .form {
     background: var(--ivory) !important; border: 1px solid var(--border) !important;
     border-radius: 12px !important; box-shadow: 0 1px 6px rgba(38,50,56,0.04) !important;
 }
 
-/* ── Labels ─────────────────────────────────────────────── */
+/* ── Primary button — force visible always ───────────────── */
+button.primary, .btn-primary,
+.gradio-container button.primary,
+.gradio-container [class*="primary"]:is(button),
+button[class*="svelte"][class*="primary"] {
+    background: #C57B57 !important; background-image: none !important;
+    color: #FFFFFF !important; border: none !important;
+    border-radius: 10px !important; font-size: 14px !important;
+    font-weight: 700 !important; letter-spacing: 0.5px !important;
+    box-shadow: 0 3px 12px rgba(197,123,87,0.30) !important;
+    opacity: 1 !important; visibility: visible !important;
+}
 .block .label-wrap > span, label > span, .block label > span, fieldset legend,
 .block > label, .form > label, .block label, .wrap label {
     font-size: 10px !important; font-weight: 700 !important; letter-spacing: 2px !important;
@@ -1091,13 +1110,6 @@ label.checkbox-label input[type="checkbox"], .checkbox-label input[type="checkbo
 input[type="range"] { accent-color: var(--olive-light) !important; }
 
 /* ── Buttons ─────────────────────────────────────────────── */
-button.primary, .btn-primary {
-    background: var(--terra) !important; background-image: none !important; color: var(--ivory) !important;
-    border: none !important; border-radius: 10px !important; font-size: 14px !important;
-    font-weight: 700 !important; letter-spacing: 0.5px !important;
-    box-shadow: 0 3px 12px rgba(197,123,87,0.30) !important;
-    transition: background 0.2s, box-shadow 0.2s, transform 0.15s !important;
-}
 button.primary:hover { background: #A86540 !important; box-shadow: 0 5px 18px rgba(197,123,87,0.40) !important; transform: translateY(-1px) !important; }
 button.secondary {
     background: var(--ivory) !important; border: 1.5px solid #D0C8BA !important; color: #4A4038 !important;
@@ -1277,7 +1289,7 @@ with gr.Blocks(
                 ai_btn = gr.Button("✨ AI 자동입력", variant="secondary", min_width=120)
 
             gr.HTML(_section_header("03 · Generate"))
-            gen_btn   = gr.Button("Generate Concept  ✶", variant="primary", size="lg")
+            gen_btn   = gr.Button("Generate Concept  ✶", variant="primary", size="lg", elem_id="gen-btn")
             with gr.Row():
                 reset_btn = gr.Button("↺ Reset", variant="secondary", min_width=90)
             status_out = gr.Markdown(value="", elem_classes=["status-msg"])
@@ -1535,16 +1547,19 @@ body, .gradio-container, .main, footer { background: #F5F0E8 !important; }
 
 /* ── Primary / Secondary buttons ───────────────────────── */
 .gradio-container button.primary, .gradio-container button[class*="primary"],
-.gradio-container button[variant="primary"] {
-    background: linear-gradient(135deg, #C57B57, #A86040) !important;
+.gradio-container button[variant="primary"],
+#gen-btn, #gen-btn button, [id="gen-btn"] button {
+    background: #C57B57 !important; background-image: none !important;
     color: #FFFFFF !important; border: none !important;
-    border-radius: 10px !important; font-weight: 600 !important;
-    font-size: 13px !important; letter-spacing: 0.4px !important;
+    border-radius: 10px !important; font-weight: 700 !important;
+    font-size: 14px !important; letter-spacing: 0.5px !important;
     box-shadow: 0 3px 10px rgba(197,123,87,0.35) !important;
+    opacity: 1 !important; visibility: visible !important;
     transition: all 0.2s ease !important;
 }
-.gradio-container button.primary:hover, .gradio-container button[class*="primary"]:hover {
-    background: linear-gradient(135deg, #D48A64, #C57B57) !important;
+.gradio-container button.primary:hover, .gradio-container button[class*="primary"]:hover,
+#gen-btn:hover, #gen-btn button:hover {
+    background: #A86040 !important;
     box-shadow: 0 5px 14px rgba(197,123,87,0.45) !important;
     transform: translateY(-1px) !important;
 }
