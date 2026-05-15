@@ -472,13 +472,13 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
 
 
 _MATERIAL_PHOTO = {
-    "Wood":     _ai_photo_url("close-up oak wood grain texture surface, warm brown tones, interior material swatch, macro photography", 400, 400, seed=11),
-    "Concrete": _ai_photo_url("smooth polished concrete surface texture, grey minimalist material swatch, macro photography", 400, 400, seed=22),
-    "Glass":    _ai_photo_url("frosted glass texture surface, translucent light diffusion, architectural glass panel detail, macro", 400, 400, seed=33),
-    "Fabric":   _ai_photo_url("linen fabric texture close-up, natural woven textile surface, interior upholstery material swatch", 400, 400, seed=44),
-    "Metal":    _ai_photo_url("brushed stainless steel surface texture, metallic sheen, industrial interior material close-up, macro", 400, 400, seed=55),
-    "Stone":    _ai_photo_url("natural stone marble texture close-up, white grey veining, interior material swatch, macro photography", 400, 400, seed=66),
-    "Brick":    _ai_photo_url("exposed red brick wall texture close-up, rough mortar joints, interior material swatch, macro photography", 400, 400, seed=77),
+    "Wood":     _ai_photo_url("oak wood grain texture surface close-up, warm brown, macro", 400, 240, seed=11),
+    "Concrete": _ai_photo_url("polished concrete surface texture, grey minimalist, macro", 400, 240, seed=22),
+    "Glass":    _ai_photo_url("frosted glass panel texture, translucent light, architectural, macro", 400, 240, seed=33),
+    "Fabric":   _ai_photo_url("linen fabric woven texture close-up, natural beige textile, macro", 400, 240, seed=44),
+    "Metal":    _ai_photo_url("brushed stainless steel surface texture, metallic sheen, macro", 400, 240, seed=55),
+    "Stone":    _ai_photo_url("white marble stone texture, grey veining, interior material, macro", 400, 240, seed=66),
+    "Brick":    _ai_photo_url("exposed red brick wall texture, rough mortar, interior, macro", 400, 240, seed=77),
 }
 _SPACE_PHOTO = {
     "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
