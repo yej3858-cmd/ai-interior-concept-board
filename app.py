@@ -462,12 +462,15 @@ _SPACE_PHOTO = {
 
 def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%", photo: str = "") -> str:
     if photo:
-        bg = f'background:#D8D2C8 url({photo}) center/cover no-repeat;'
+        bg = "background:#D8D2C8;"
         label_color = "#FFFDF7"
-        overlay = ('<div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(20,18,14,0.55));"></div>'
+        overlay = (f'<img src="{photo}" style="position:absolute;inset:0;width:100%;height:100%;'
+                   f'object-fit:cover;display:block;" loading="lazy" '
+                   f'onerror="this.style.display=\'none\'" />'
+                   '<div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(20,18,14,0.55));pointer-events:none;"></div>'
                    '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
                    'font-size:11px;color:rgba(80,70,60,0.5);letter-spacing:1px;pointer-events:none;'
-                   'background:rgba(255,253,247,0.6);padding:4px 10px;border-radius:20px;">'
+                   'background:rgba(255,253,247,0.6);padding:4px 10px;border-radius:20px;z-index:-1;">'
                    'AI 이미지 생성 중…</div>')
     else:
         pale  = _pale_tint(mat_hex, 0.12)
