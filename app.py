@@ -930,7 +930,7 @@ def suggest_materials_from_image(img, cur_mat, cur_light, cur_mood, cur_spatial)
 
 
 def export_board_html(board_html):
-    if not board_html or "dashed" in board_html:
+    if not board_html or "Material Palette" not in board_html:
         gr.Warning("Generate a concept board first.")
         return gr.update(visible=False)
     png_btn = (
@@ -1237,7 +1237,7 @@ with gr.Blocks(
                                             placeholder="blurry, low quality, people, text")
                 with gr.Row():
                     steps_in = gr.Slider(1, 100, step=1,   value=20,  label="Steps")
-                    cfg_in   = gr.Slider(1, 20,  step=0.5, value=7.0, label="CFG")
+                    cfg_in   = gr.Slider(1, 20,  step=0.5, value=1.0, label="CFG")
                 with gr.Row():
                     imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Size")
                     seed_in    = gr.Number(value=-1, label="Seed", precision=0)
@@ -1330,70 +1330,184 @@ with gr.Blocks(
     export_btn.click(fn=export_board_html, inputs=[board_out], outputs=[export_file])
 
 
-FORCE_CSS = """<style>
-.gradio-container label, .gradio-container .label-wrap, .gradio-container .label-wrap span,
-.gradio-container .block-label, .gradio-container fieldset legend,
-.gradio-container span[data-testid="block-label"], .gradio-container [class*="block_label"],
-.gradio-container [class*="block-label"], .gradio-container h1, .gradio-container h2,
-.gradio-container h3, .gradio-container h4, .gradio-container h5 {
-    color: #3C3428 !important; background: transparent !important;
-    font-weight: 600 !important; opacity: 1 !important;
+FORCE_CSS = """
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ── Base font ─────────────────────────────────────────── */
+.gradio-container, .gradio-container * {
+    font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif !important;
 }
+
+/* ── Page background ────────────────────────────────────── */
+body, .gradio-container, .main, footer { background: #F5F0E8 !important; }
+
+/* ── All labels & headings ──────────────────────────────── */
+.gradio-container label, .gradio-container .label-wrap,
+.gradio-container .label-wrap span, .gradio-container .block-label,
+.gradio-container fieldset legend,
+.gradio-container span[data-testid="block-label"],
+.gradio-container [class*="block_label"], .gradio-container [class*="block-label"],
+.gradio-container h1, .gradio-container h2, .gradio-container h3,
+.gradio-container h4, .gradio-container h5 {
+    color: #2E2820 !important; background: transparent !important;
+    font-weight: 600 !important; opacity: 1 !important;
+    letter-spacing: 0.2px !important;
+}
+
+/* ── Block group containers ─────────────────────────────── */
+.gradio-container .block, .gradio-container .form,
+.gradio-container fieldset {
+    background: #FFFCF5 !important;
+    border: 1px solid #E0D8CC !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 4px rgba(60,50,40,0.06) !important;
+}
+
+/* ── Block/group field labels ───────────────────────────── */
+.gradio-container .block-info, .gradio-container .info,
+.gradio-container .form > label, .gradio-container .form > label > span,
+.gradio-container .block > .label-wrap, .gradio-container legend,
+.gradio-container [class*="head"] > span {
+    color: #2E2820 !important; font-weight: 700 !important;
+    font-size: 11px !important; letter-spacing: 1px !important;
+    text-transform: uppercase !important; opacity: 1 !important;
+}
+
+/* ── Checkbox pills ─────────────────────────────────────── */
 .gradio-container label.checkbox-label, .gradio-container .checkbox-label,
-.gradio-container label[class*="checkbox"], .gradio-container [data-testid="checkbox"],
-.gradio-container .wrap label, .gradio-container fieldset label {
-    background: #EDE8DF !important; background-color: #EDE8DF !important;
-    color: #2A2420 !important; border: 1.5px solid #C8BCAC !important;
+.gradio-container label[class*="checkbox"], .gradio-container .wrap label,
+.gradio-container fieldset label {
+    background: #EDE7DC !important; background-color: #EDE7DC !important;
+    color: #2E2820 !important; border: 1.5px solid #C8BCAA !important;
+    border-radius: 20px !important; padding: 5px 14px !important;
+    font-size: 12px !important; font-weight: 500 !important;
+    transition: all 0.15s ease !important;
 }
 .gradio-container label.checkbox-label *, .gradio-container .checkbox-label *,
 .gradio-container fieldset label *, .gradio-container label[class*="checkbox"] * {
-    color: #2A2420 !important;
+    color: #2E2820 !important;
 }
 .gradio-container label.checkbox-label:hover, .gradio-container .checkbox-label:hover,
 .gradio-container fieldset label:hover {
-    background: #E4EED8 !important; background-color: #E4EED8 !important; border-color: #7A9868 !important;
+    background: #DFF0D2 !important; background-color: #DFF0D2 !important;
+    border-color: #7A9868 !important;
 }
 .gradio-container label.checkbox-label:has(input:checked),
 .gradio-container .checkbox-label:has(input:checked),
 .gradio-container fieldset label:has(input:checked),
 .gradio-container label[class*="checkbox"]:has(input:checked) {
     background: #4E7040 !important; background-color: #4E7040 !important;
-    border-color: #3C5C30 !important; color: #FFFFFF !important;
+    border-color: #3A5830 !important; color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(78,112,64,0.3) !important;
 }
 .gradio-container label.checkbox-label:has(input:checked) *,
 .gradio-container .checkbox-label:has(input:checked) *,
 .gradio-container fieldset label:has(input:checked) *,
 .gradio-container label[class*="checkbox"]:has(input:checked) * { color: #FFFFFF !important; }
+
+/* ── Inputs / Textareas ─────────────────────────────────── */
 .gradio-container input, .gradio-container textarea, .gradio-container select,
 .gradio-container .wrap-inner {
-    background: #FFFDF7 !important; color: #2A2420 !important; border-color: #D0C8BA !important;
+    background: #FFFCF5 !important; color: #2E2820 !important;
+    border-color: #D0C8B8 !important; border-radius: 8px !important;
+    font-size: 13px !important;
 }
-.gradio-container input::placeholder, .gradio-container textarea::placeholder { color: #9A9288 !important; }
-.gradio-container button[role="tab"] { color: #6F6A60 !important; background: transparent !important; }
+.gradio-container input::placeholder, .gradio-container textarea::placeholder {
+    color: #A09888 !important;
+}
+.gradio-container input:focus, .gradio-container textarea:focus {
+    border-color: #C57B57 !important;
+    box-shadow: 0 0 0 3px rgba(197,123,87,0.12) !important;
+    outline: none !important;
+}
+
+/* ── Dropdown / select ──────────────────────────────────── */
+.gradio-container .wrap, .gradio-container [class*="dropdown"] {
+    background: #FFFCF5 !important; color: #2E2820 !important;
+    border-color: #D0C8B8 !important;
+}
+.gradio-container [class*="option"]:hover, .gradio-container [class*="item"]:hover {
+    background: #F0EBE0 !important;
+}
+
+/* ── Tabs ───────────────────────────────────────────────── */
+.gradio-container button[role="tab"] {
+    color: #7A7268 !important; background: transparent !important;
+    font-weight: 500 !important; font-size: 13px !important;
+    letter-spacing: 0.3px !important; padding: 8px 16px !important;
+    border-radius: 0 !important;
+}
 .gradio-container button[role="tab"][aria-selected="true"] {
-    color: #C57B57 !important; border-bottom: 2px solid #C57B57 !important;
+    color: #C57B57 !important;
+    border-bottom: 2px solid #C57B57 !important;
+    font-weight: 600 !important;
+}
+.gradio-container [role="tablist"] {
+    border-bottom: 1px solid #DDD5C5 !important;
+}
+
+/* ── Primary / Secondary buttons ───────────────────────── */
+.gradio-container button.primary, .gradio-container button[class*="primary"],
+.gradio-container button[variant="primary"] {
+    background: linear-gradient(135deg, #C57B57, #A86040) !important;
+    color: #FFFFFF !important; border: none !important;
+    border-radius: 10px !important; font-weight: 600 !important;
+    font-size: 13px !important; letter-spacing: 0.4px !important;
+    box-shadow: 0 3px 10px rgba(197,123,87,0.35) !important;
+    transition: all 0.2s ease !important;
+}
+.gradio-container button.primary:hover, .gradio-container button[class*="primary"]:hover {
+    background: linear-gradient(135deg, #D48A64, #C57B57) !important;
+    box-shadow: 0 5px 14px rgba(197,123,87,0.45) !important;
+    transform: translateY(-1px) !important;
 }
 .gradio-container button.secondary, .gradio-container button[class*="secondary"] {
-    background: #FFFDF7 !important; color: #4A4038 !important; border: 1px solid #D0C8BA !important;
+    background: #FFFCF5 !important; color: #4A4038 !important;
+    border: 1.5px solid #D0C8B8 !important; border-radius: 10px !important;
+    font-weight: 500 !important; font-size: 13px !important;
 }
-/* Block/group titles like "Space Type", "UX / Activity" — force dark + bold */
-.gradio-container .block-info, .gradio-container .info,
-.gradio-container span.svelte-1gfkn6j, .gradio-container .form > label,
-.gradio-container .form > label > span, .gradio-container .block > .label-wrap,
-.gradio-container [class*="head"] > span, .gradio-container legend {
-    color: #2A2420 !important; font-weight: 700 !important;
-    font-size: 13px !important; letter-spacing: 0.4px !important; opacity: 1 !important;
+.gradio-container button.secondary:hover {
+    background: #F0EBE0 !important; border-color: #C8B89A !important;
 }
-/* Markdown <strong> in Korean output — kill background highlight */
+
+/* ── Slider ─────────────────────────────────────────────── */
+.gradio-container input[type="range"] { accent-color: #C57B57 !important; }
+.gradio-container .range-slider [class*="fill"] { background: #C57B57 !important; }
+
+/* ── Markdown ───────────────────────────────────────────── */
 .gradio-container .prose strong, .gradio-container strong,
 .gradio-container .markdown strong, .gradio-container [class*="markdown"] strong {
     background: transparent !important; background-color: transparent !important;
     color: #C57B57 !important; font-weight: 700 !important;
     padding: 0 !important; box-shadow: none !important;
 }
-/* Markdown body text fallback */
 .gradio-container .prose, .gradio-container .prose p,
-.gradio-container [class*="markdown"] p { color: #2A2420 !important; }
+.gradio-container [class*="markdown"] p {
+    color: #2E2820 !important; line-height: 1.7 !important;
+}
+.gradio-container .prose em, .gradio-container em {
+    font-family: 'DM Serif Display', Georgia, serif !important;
+    color: #6B5A48 !important;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F0EBE0; }
+::-webkit-scrollbar-thumb { background: #C8B89A; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #A89878; }
+
+/* ── Upload zones ───────────────────────────────────────── */
+.gradio-container [data-testid="image"] {
+    background: #FFFCF5 !important; border: 1.5px dashed #C8BCAA !important;
+    border-radius: 12px !important;
+}
+
+/* ── Accordion / Collapsible ────────────────────────────── */
+.gradio-container .block.accordion, .gradio-container details {
+    border-radius: 10px !important;
+}
 </style>"""
 
 if __name__ == "__main__":
