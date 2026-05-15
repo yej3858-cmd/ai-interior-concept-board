@@ -472,13 +472,13 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
 
 
 _MATERIAL_PHOTO = {
-    "Wood":     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    "Concrete": "https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=400&h=400&fit=crop",
-    "Glass":    "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&h=400&fit=crop",
-    "Fabric":   "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop",
-    "Metal":    "https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=400&h=400&fit=crop",
-    "Stone":    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    "Brick":    "https://images.unsplash.com/photo-1520333789090-1afc82db536a?w=400&h=400&fit=crop",
+    "Wood":     _ai_photo_url("close-up oak wood grain texture surface, warm brown tones, interior material swatch, macro photography", 400, 400, seed=11),
+    "Concrete": _ai_photo_url("smooth polished concrete surface texture, grey minimalist material swatch, macro photography", 400, 400, seed=22),
+    "Glass":    _ai_photo_url("frosted glass texture surface, translucent light diffusion, architectural glass panel detail, macro", 400, 400, seed=33),
+    "Fabric":   _ai_photo_url("linen fabric texture close-up, natural woven textile surface, interior upholstery material swatch", 400, 400, seed=44),
+    "Metal":    _ai_photo_url("brushed stainless steel surface texture, metallic sheen, industrial interior material close-up, macro", 400, 400, seed=55),
+    "Stone":    _ai_photo_url("natural stone marble texture close-up, white grey veining, interior material swatch, macro photography", 400, 400, seed=66),
+    "Brick":    _ai_photo_url("exposed red brick wall texture close-up, rough mortar joints, interior material swatch, macro photography", 400, 400, seed=77),
 }
 _SPACE_PHOTO = {
     "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
@@ -541,17 +541,25 @@ def _material_block(name: str) -> str:
     d = MATERIAL_DATA[name]
     photo = _MATERIAL_PHOTO.get(name, "")
     if photo:
-        bg_css = f'background:#EDE8DF url({photo}) center/cover no-repeat;'
+        inner = (
+            f'<img src="{photo}" style="position:absolute;inset:0;width:100%;height:100%;'
+            f'object-fit:cover;border-radius:7px;" loading="lazy" '
+            f'onerror="this.style.display=\'none\'" />'
+            f'<div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,0.45));border-radius:7px;pointer-events:none;"></div>'
+        )
+        container_bg = "background:#C8C0B4;"
     else:
-        bg_css = f'background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
+        inner = ""
+        container_bg = f'background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
     return (
         f'<div style="flex:1;min-width:78px;">'
-        f'<div style="height:60px;{bg_css}'
+        f'<div style="height:60px;{container_bg}'
         f'border-radius:7px;margin-bottom:6px;position:relative;border:1px solid rgba(0,0,0,0.1);'
-        f'box-shadow:0 1px 3px rgba(0,0,0,0.08);">'
+        f'box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden;">'
+        f'{inner}'
         f'<span style="position:absolute;bottom:4px;left:6px;right:6px;font-size:8px;font-weight:700;'
         f'letter-spacing:1px;text-transform:uppercase;color:#FFFDF7;'
-        f'text-shadow:0 1px 2px rgba(0,0,0,0.7);">{name.upper()}</span></div>'
+        f'text-shadow:0 1px 2px rgba(0,0,0,0.8);z-index:2;">{name.upper()}</span></div>'
         f'<div style="font-size:11px;color:#3C3428;font-weight:600;margin-bottom:2px;">{d["ko"]}</div>'
         f'<div style="font-size:10px;color:#6F6A60;">{d["finish"]}</div></div>'
     )
