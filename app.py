@@ -196,6 +196,26 @@ SPACE_TYPES = {
                "ko_intro": "생산성과 창의성이 공존하는",
                "img_labels": ["Work Zone", "Collaboration Hub", "Focus Area"],
                "img_icons": ["🖥️", "📐", "🌱"]},
+    "Shop / Retail": {"ko": "쇼핑 공간", "en_char": "inviting, curated, brand-expressive",
+                      "ko_intro": "브랜드 감성과 경험이 살아있는",
+                      "img_labels": ["Display Zone", "Feature Wall", "Customer Flow"],
+                      "img_icons": ["🛍️", "🏷️", "✨"]},
+    "Restaurant": {"ko": "레스토랑", "en_char": "atmospheric, sensory, intimate",
+                   "ko_intro": "미식과 감각이 어우러지는",
+                   "img_labels": ["Dining Area", "Bar Counter", "Ambient Lighting"],
+                   "img_icons": ["🍽️", "🕯️", "🌿"]},
+    "Hotel Lobby": {"ko": "호텔 로비", "en_char": "grand, welcoming, luxurious",
+                    "ko_intro": "격조와 환영이 공존하는",
+                    "img_labels": ["Reception Zone", "Lounge Seating", "Feature Ceiling"],
+                    "img_icons": ["🏨", "🛎️", "💎"]},
+    "Studio": {"ko": "스튜디오", "en_char": "creative, flexible, raw",
+               "ko_intro": "창의적 작업과 영감이 넘치는",
+               "img_labels": ["Work Surface", "Storage Wall", "Creative Zone"],
+               "img_icons": ["🎨", "📐", "💡"]},
+    "Wellness / Spa": {"ko": "웰니스·스파", "en_char": "serene, restorative, sensory",
+                       "ko_intro": "회복과 고요함이 흐르는",
+                       "img_labels": ["Treatment Area", "Relaxation Zone", "Water Feature"],
+                       "img_icons": ["🧘", "🪷", "💧"]},
     "Learning Space": {"ko": "러닝 스페이스", "en_char": "stimulating, structured, adaptive",
                        "ko_intro": "배움과 성장이 일어나는",
                        "img_labels": ["Teaching Area", "Workshop Zone", "Breakout Space"],
@@ -1208,7 +1228,8 @@ with gr.Blocks(
     with gr.Row(equal_height=False):
 
         with gr.Column(scale=1, min_width=260):
-            space_in = gr.Dropdown(choices=SPACE_LIST, value="Library", label="Space Type")
+            space_in = gr.Dropdown(choices=SPACE_LIST, value="Library", label="Space Type",
+                                   allow_custom_value=True, info="Select or type a custom space")
             mood_in  = gr.Dropdown(choices=MOOD_LIST,  value="Calm",    label="Mood")
             extra_in = gr.Textbox(label="Custom Keywords / Natural Description",
                                    placeholder="예: 따뜻한 우드 톤의 조용한 도서관, 바이오필릭 요소", lines=3)
@@ -1226,12 +1247,13 @@ with gr.Blocks(
                 preset_btns.append((btn, preset["data"]))
 
             gr.HTML(_section_header("History"))
-            history_state = gr.State([])
+            history_state   = gr.State([])
+            concept_state   = gr.State("")
             history_dd = gr.Dropdown(label="Recent Generations", choices=[], interactive=True)
 
             with gr.Accordion("🔌 Image Generation (Future)", open=False):
                 with gr.Row():
-                    use_external_in = gr.Checkbox(label="Enable", value=False, scale=1)
+                    use_external_in = gr.Checkbox(label="Enable", value=True, scale=1)
                     external_url_in = gr.Textbox(label="Server URL", placeholder="http://127.0.0.1:8188", scale=3)
                 neg_prompt_in = gr.Textbox(label="Negative Prompt", lines=2,
                                             placeholder="blurry, low quality, people, text")
@@ -1282,17 +1304,21 @@ with gr.Blocks(
     outputs = [main_prompt_out, material_prompt_out, atmo_prompt_out,
                tags_out, korean_out, board_out, status_out]
     hist_inputs = [history_state, space_in, mood_in, board_out,
-                   main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, korean_out]
+                   main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, concept_state]
+
+    def _sync_concept(txt): return txt
 
     # Generate button
     (gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+            .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
 
     # Enter key
     (extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
              .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+             .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
              .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
              .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
 
@@ -1312,6 +1338,7 @@ with gr.Blocks(
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+            .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
 
@@ -1321,7 +1348,7 @@ with gr.Blocks(
                       inputs=[img_in, material_in, lighting_in, mood_in, spatial_in],
                       outputs=[material_in, lighting_in, mood_in, spatial_in])
 
-    # History restore
+    # History restore — also update concept_state so statement is recoverable
     history_dd.change(fn=load_history_entry, inputs=[history_state, history_dd],
                       outputs=[board_out, main_prompt_out, material_prompt_out,
                                atmo_prompt_out, tags_out, korean_out])
