@@ -667,13 +667,6 @@ def build_html_board(
     act_chips  = "".join(_chip(a, "#EDE8DF", "#4A3C30") for a in activities) or _chip("—", "#F5F2EE", "#AAA8A4")
     lit_chips  = "".join(_chip(l, "#EDE8DF", "#3C3830") for l in lighting)   or _chip("—", "#F5F2EE", "#AAA8A4")
     spa_chips  = "".join(_chip(s, "#E6EDE8", "#303C38") for s in spatial)    or _chip("—", "#F5F2EE", "#AAA8A4")
-    custom_section = ""
-    if custom_descriptors:
-        cc = "".join(_chip(d, "#F5EDE6", "#6B3E28", "#D4B8A8") for d in custom_descriptors)
-        custom_section = (f'<div style="background:#FFFDF7;border-radius:10px;padding:16px;'
-                          f'margin-bottom:10px;border:1px solid #D8D0C3;border-left:3px solid #C57B57;">'
-                          f'{_board_label("Custom Concept Elements")}'
-                          f'<div style="line-height:2;">{cc}</div></div>')
     ko_raw = ko_override or build_korean(space, activities, materials, lighting, mood, spatial,
                                           translated_extra, custom_descriptors)
     ko_html = _md_bold_to_html(ko_raw)
@@ -825,7 +818,8 @@ def generate_concept(
             workflow = _future_load_workflow()
             if workflow:
                 w, h     = parse_image_size(img_size)
-                seed_val = int(seed) if int(seed) >= 0 else random.randint(0, 2**31 - 1)
+                seed_int = int(seed)
+                seed_val = seed_int if seed_int >= 0 else random.randint(0, 2**31 - 1)
                 neg      = neg_prompt or ""
                 wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val)
                 future_main = _future_comfyui_generate(external_url.strip(), wf1)
@@ -845,7 +839,7 @@ def generate_concept(
         uploaded_main=upload_main, uploaded_material=upload_material, uploaded_atmosphere=upload_atmosphere,
         warning=warning, ko_override=ko_stmt,
         material_prompt=material_prompt, atmo_prompt=atmosphere_prompt,
-        seed_base=int(seed) if seed and int(seed) >= 0 else 0,
+        seed_base=seed_val if use_external and external_url and external_url.strip() else 0,
     )
     n_uploads = sum(1 for x in [upload_main, upload_material, upload_atmosphere] if x is not None)
     upload_note = f" · {n_uploads} image{'s' if n_uploads>1 else ''} used" if n_uploads else ""
@@ -945,6 +939,8 @@ def gemini_vision_tags(img):
 def suggest_materials_from_image(img, cur_mat, cur_light, cur_mood, cur_spatial):
     if img is None or not HAS_PIL:
         return cur_mat, cur_light, cur_mood, cur_spatial
+    if GEMINI_KEY:
+        gr.Info("Analyzing image with Gemini Vision…")
     j = gemini_vision_tags(img) if GEMINI_KEY else {}
     if j:
         mats   = [m for m in (j.get("materials") or []) if m in MATERIAL_LIST]
@@ -1304,7 +1300,7 @@ with gr.Blocks(
             gr.HTML(_section_header("04 · Image Generation"))
             gr.HTML('<p style="font-size:11px;color:#9A9288;margin:-4px 0 10px;line-height:1.6;">Connect to ComfyUI to generate images via FLUX</p>')
             with gr.Row():
-                use_external_in = gr.Checkbox(label="Enable", value=True, scale=1)
+                use_external_in = gr.Checkbox(label="FLUX via ComfyUI", value=True, scale=1)
                 external_url_in = gr.Textbox(label="Server URL", placeholder="http://127.0.0.1:8188", scale=3)
             neg_prompt_in = gr.Textbox(label="Negative Prompt", lines=2,
                                         placeholder="blurry, low quality, people, text")
@@ -1333,7 +1329,7 @@ with gr.Blocks(
 
             gr.HTML(_section_header("Design Parameters"))
             with gr.Row():
-                activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST, label="UX / Activity", scale=1)
+                activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST, label="Activities", scale=1)
                 material_in = gr.CheckboxGroup(choices=MATERIAL_LIST, label="Material Palette", scale=1)
             with gr.Row():
                 lighting_in = gr.CheckboxGroup(choices=LIGHTING_LIST, label="Lighting", scale=1)
@@ -1384,20 +1380,26 @@ with gr.Blocks(
                    main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, concept_state]
 
     def _sync_concept(txt): return txt
+    def _btn_loading():  return gr.update(value="Generating…", interactive=False)
+    def _btn_ready():    return gr.update(value="Generate Concept  ✶", interactive=True)
 
     # Generate button
-    (gen_btn.click(fn=generate_concept, inputs=inputs, outputs=outputs)
+    (gen_btn.click(fn=_btn_loading, inputs=[], outputs=[gen_btn])
+            .then(fn=generate_concept, inputs=inputs, outputs=outputs)
             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
             .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
-            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd])
+            .then(fn=_btn_ready, inputs=[], outputs=[gen_btn]))
 
     # Enter key
-    (extra_in.submit(fn=generate_concept, inputs=inputs, outputs=outputs)
+    (extra_in.submit(fn=_btn_loading, inputs=[], outputs=[gen_btn])
+             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
              .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
              .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
              .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
-             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd])
+             .then(fn=_btn_ready, inputs=[], outputs=[gen_btn]))
 
     # Reset
     reset_btn.click(fn=reset_inputs, inputs=[],
@@ -1439,182 +1441,35 @@ FORCE_CSS = """
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
-/* ── Base font ─────────────────────────────────────────── */
-.gradio-container, .gradio-container * {
+/* Font override — must be in <head> to beat Gradio defaults */
+body, .gradio-container, .gradio-container * {
     font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif !important;
 }
+body { background: #F7F2E8 !important; }
 
-/* ── Page background ────────────────────────────────────── */
-body, .gradio-container, .main, footer { background: #F5F0E8 !important; }
-
-/* ── All labels & headings ──────────────────────────────── */
-.gradio-container label, .gradio-container .label-wrap,
-.gradio-container .label-wrap span, .gradio-container .block-label,
-.gradio-container fieldset legend,
-.gradio-container span[data-testid="block-label"],
-.gradio-container [class*="block_label"], .gradio-container [class*="block-label"],
-.gradio-container h1, .gradio-container h2, .gradio-container h3,
-.gradio-container h4, .gradio-container h5 {
-    color: #2E2820 !important; background: transparent !important;
-    font-weight: 600 !important; opacity: 1 !important;
-    letter-spacing: 0.2px !important;
-}
-
-/* ── Block group containers ─────────────────────────────── */
-.gradio-container .block, .gradio-container .form,
-.gradio-container fieldset {
-    background: #FFFCF5 !important;
-    border: 1px solid #E0D8CC !important;
-    border-radius: 12px !important;
-    box-shadow: 0 1px 4px rgba(60,50,40,0.06) !important;
-}
-
-/* ── Block/group field labels ───────────────────────────── */
-.gradio-container .block-info, .gradio-container .info,
-.gradio-container .form > label, .gradio-container .form > label > span,
-.gradio-container .block > .label-wrap, .gradio-container legend,
-.gradio-container [class*="head"] > span {
-    color: #2E2820 !important; font-weight: 700 !important;
-    font-size: 11px !important; letter-spacing: 1px !important;
-    text-transform: uppercase !important; opacity: 1 !important;
-}
-
-/* ── Checkbox pills ─────────────────────────────────────── */
-.gradio-container label.checkbox-label, .gradio-container .checkbox-label,
-.gradio-container label[class*="checkbox"], .gradio-container .wrap label,
-.gradio-container fieldset label {
-    background: #EDE7DC !important; background-color: #EDE7DC !important;
-    color: #2E2820 !important; border: 1.5px solid #C8BCAA !important;
-    border-radius: 20px !important; padding: 5px 14px !important;
-    font-size: 12px !important; font-weight: 500 !important;
-    transition: all 0.15s ease !important;
-}
-.gradio-container label.checkbox-label *, .gradio-container .checkbox-label *,
-.gradio-container fieldset label *, .gradio-container label[class*="checkbox"] * {
-    color: #2E2820 !important;
-}
-.gradio-container label.checkbox-label:hover, .gradio-container .checkbox-label:hover,
-.gradio-container fieldset label:hover {
-    background: #DFF0D2 !important; background-color: #DFF0D2 !important;
-    border-color: #7A9868 !important;
-}
-.gradio-container label.checkbox-label:has(input:checked),
-.gradio-container .checkbox-label:has(input:checked),
-.gradio-container fieldset label:has(input:checked),
-.gradio-container label[class*="checkbox"]:has(input:checked) {
-    background: #4E7040 !important; background-color: #4E7040 !important;
-    border-color: #3A5830 !important; color: #FFFFFF !important;
-    box-shadow: 0 2px 6px rgba(78,112,64,0.3) !important;
-}
-.gradio-container label.checkbox-label:has(input:checked) *,
-.gradio-container .checkbox-label:has(input:checked) *,
-.gradio-container fieldset label:has(input:checked) *,
-.gradio-container label[class*="checkbox"]:has(input:checked) * { color: #FFFFFF !important; }
-
-/* ── Inputs / Textareas ─────────────────────────────────── */
-.gradio-container input, .gradio-container textarea, .gradio-container select,
-.gradio-container .wrap-inner {
-    background: #FFFCF5 !important; color: #2E2820 !important;
-    border-color: #D0C8B8 !important; border-radius: 8px !important;
-    font-size: 13px !important;
-}
-.gradio-container input::placeholder, .gradio-container textarea::placeholder {
-    color: #A09888 !important;
-}
-.gradio-container input:focus, .gradio-container textarea:focus {
-    border-color: #C57B57 !important;
-    box-shadow: 0 0 0 3px rgba(197,123,87,0.12) !important;
-    outline: none !important;
-}
-
-/* ── Dropdown / select ──────────────────────────────────── */
-.gradio-container .wrap, .gradio-container [class*="dropdown"] {
-    background: #FFFCF5 !important; color: #2E2820 !important;
-    border-color: #D0C8B8 !important;
-}
-.gradio-container [class*="option"]:hover, .gradio-container [class*="item"]:hover {
-    background: #F0EBE0 !important;
-}
-
-/* ── Tabs ───────────────────────────────────────────────── */
-.gradio-container button[role="tab"] {
-    color: #7A7268 !important; background: transparent !important;
-    font-weight: 500 !important; font-size: 13px !important;
-    letter-spacing: 0.3px !important; padding: 8px 16px !important;
-    border-radius: 0 !important;
-}
-.gradio-container button[role="tab"][aria-selected="true"] {
-    color: #C57B57 !important;
-    border-bottom: 2px solid #C57B57 !important;
-    font-weight: 600 !important;
-}
-.gradio-container [role="tablist"] {
-    border-bottom: 1px solid #DDD5C5 !important;
-}
-
-/* ── Primary / Secondary buttons ───────────────────────── */
+/* Primary button — high-specificity override for Gradio 6 */
 .gradio-container button.primary, .gradio-container button[class*="primary"],
-.gradio-container button[variant="primary"],
-#gen-btn, #gen-btn button, [id="gen-btn"] button {
+#gen-btn, #gen-btn button {
     background: #C57B57 !important; background-image: none !important;
     color: #FFFFFF !important; border: none !important;
-    border-radius: 10px !important; font-weight: 700 !important;
-    font-size: 14px !important; letter-spacing: 0.5px !important;
-    box-shadow: 0 3px 10px rgba(197,123,87,0.35) !important;
     opacity: 1 !important; visibility: visible !important;
-    transition: all 0.2s ease !important;
 }
-.gradio-container button.primary:hover, .gradio-container button[class*="primary"]:hover,
-#gen-btn:hover, #gen-btn button:hover {
-    background: #A86040 !important;
-    box-shadow: 0 5px 14px rgba(197,123,87,0.45) !important;
-    transform: translateY(-1px) !important;
-}
-.gradio-container button.secondary, .gradio-container button[class*="secondary"] {
-    background: #FFFCF5 !important; color: #4A4038 !important;
-    border: 1.5px solid #D0C8B8 !important; border-radius: 10px !important;
-    font-weight: 500 !important; font-size: 13px !important;
-}
-.gradio-container button.secondary:hover {
-    background: #F0EBE0 !important; border-color: #C8B89A !important;
+.gradio-container button.primary:hover, #gen-btn:hover { background: #A86040 !important; }
+/* Disabled state while generating */
+.gradio-container button.primary:disabled,
+.gradio-container button[class*="primary"]:disabled {
+    background: #D8C4B8 !important; color: #8A7870 !important;
+    box-shadow: none !important; transform: none !important; cursor: not-allowed !important;
 }
 
-/* ── Slider ─────────────────────────────────────────────── */
-.gradio-container input[type="range"] { accent-color: #C57B57 !important; }
-.gradio-container .range-slider [class*="fill"] { background: #C57B57 !important; }
-
-/* ── Markdown ───────────────────────────────────────────── */
-.gradio-container .prose strong, .gradio-container strong,
-.gradio-container .markdown strong, .gradio-container [class*="markdown"] strong {
-    background: transparent !important; background-color: transparent !important;
-    color: #C57B57 !important; font-weight: 700 !important;
-    padding: 0 !important; box-shadow: none !important;
-}
-.gradio-container .prose, .gradio-container .prose p,
-.gradio-container [class*="markdown"] p {
-    color: #2E2820 !important; line-height: 1.7 !important;
-}
-.gradio-container .prose em, .gradio-container em {
-    font-family: 'DM Serif Display', Georgia, serif !important;
-    color: #6B5A48 !important;
+/* Tabs */
+.gradio-container button[role="tab"] { color: #7A7268 !important; }
+.gradio-container button[role="tab"][aria-selected="true"] {
+    color: #C57B57 !important; border-bottom: 2px solid #C57B57 !important; font-weight: 600 !important;
 }
 
-/* ── Scrollbar ──────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #F0EBE0; }
-::-webkit-scrollbar-thumb { background: #C8B89A; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #A89878; }
-
-/* ── Upload zones ───────────────────────────────────────── */
-.gradio-container [data-testid="image"] {
-    background: #FFFCF5 !important; border: 1.5px dashed #C8BCAA !important;
-    border-radius: 12px !important;
-}
-
-/* ── Accordion / Collapsible ────────────────────────────── */
-.gradio-container .block.accordion, .gradio-container details {
-    border-radius: 10px !important;
-}
+/* Markdown bold */
+.gradio-container strong { background: transparent !important; color: #C57B57 !important; }
 </style>"""
 
 if __name__ == "__main__":
