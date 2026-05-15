@@ -972,12 +972,14 @@ def export_board_html(board_html):
         gr.Warning("Generate a concept board first.")
         return gr.update(visible=False)
     png_btn = (
-        "<div style='text-align:center;margin:20px 0;'>"
+        "<div style='text-align:center;padding:16px 0;background:#F5F0E8;'>"
         "<button onclick=\"(function(){"
         "var s=document.createElement('script');"
         "s.src='https://html2canvas.hertzen.com/dist/html2canvas.min.js';"
         "s.onload=function(){"
-        "html2canvas(document.querySelector('.board-export'),{scale:2,useCORS:true}).then(function(c){"
+        "html2canvas(document.querySelector('.board-export'),{scale:2,useCORS:true,"
+        "width:document.querySelector('.board-export').offsetWidth,"
+        "x:0,y:0}).then(function(c){"
         "var a=document.createElement('a');a.download='concept-board.png';"
         "a.href=c.toDataURL('image/png');a.click();});};"
         "document.head.appendChild(s);}())\" "
@@ -987,8 +989,9 @@ def export_board_html(board_html):
     wrapped = f'<div class="board-export">{board_html}</div>'
     html = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<title>AI Interior Concept Board</title>"
-            f"<style>body{{margin:0;padding:20px;background:#F7F3EA;"
-            f"font-family:'Helvetica Neue',Arial,sans-serif;}}</style>"
+            f"<style>*{{box-sizing:border-box;}}body{{margin:0;padding:0;background:#F5F0E8;"
+            f"font-family:'Helvetica Neue',Arial,sans-serif;}}"
+            f".board-export{{max-width:960px;margin:0 auto;}}</style>"
             f"</head><body>{png_btn}{wrapped}</body></html>")
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, encoding="utf-8")
     tmp.write(html)
@@ -1175,6 +1178,10 @@ HEADER_HTML = """
     </h1>
   </div>
   <div style="text-align:right;">
+    <p style="font-size:10px;color:#B0A898;margin:0 0 4px;line-height:1.6;
+              font-family:'Helvetica Neue',Arial,sans-serif;letter-spacing:0.3px;">
+      2026-1 AI &amp; Int.Arch. Design &nbsp;·&nbsp; 2021153021 김지현
+    </p>
     <p style="font-size:11px;color:#9A9288;margin:0;line-height:1.8;
               font-family:'Helvetica Neue',Arial,sans-serif;">
       Space &amp; mood → Generate → 3 image prompts<br>
