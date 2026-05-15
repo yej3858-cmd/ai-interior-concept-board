@@ -104,7 +104,12 @@ OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://localhost:11434").rstrip("
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2").strip()
 
 
-def ollama_call(prompt: str, want_json: bool = False, timeout: int = 40) -> str:
+_OLLAMA_DEAD = False  # cache: skip Ollama once we know it's unreachable
+
+def ollama_call(prompt: str, want_json: bool = False, timeout: int = 8) -> str:
+    global _OLLAMA_DEAD
+    if _OLLAMA_DEAD:
+        return ""
     url = f"{OLLAMA_URL}/api/generate"
     body = json.dumps({"model": OLLAMA_MODEL, "prompt": prompt,
                        "stream": False, "format": "json" if want_json else ""}).encode()
@@ -113,11 +118,13 @@ def ollama_call(prompt: str, want_json: bool = False, timeout: int = 40) -> str:
         with _urlreq.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read())["response"].strip()
     except Exception as e:
-        print(f"[Ollama] {e}")
+        print(f"[Ollama] {e} — disabling for this session")
+        _OLLAMA_DEAD = True
         return ""
 
 
-def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
+def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25,
+                retries: int = 2) -> str:
     if not GEMINI_KEY:
         return ""
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
@@ -128,15 +135,25 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
         cfg["responseMimeType"] = "application/json"
     body = json.dumps({"contents": [{"parts": [{"text": prompt}]}],
                        "generationConfig": cfg}).encode("utf-8")
-    req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
-    try:
-        with _urlreq.urlopen(req, timeout=timeout) as r:
-            data = json.loads(r.read().decode("utf-8"))
-        parts = data["candidates"][0]["content"]["parts"]
-        return next((p["text"].strip() for p in parts if "text" in p), "")
-    except Exception as e:
-        print(f"[Gemini] {e}")
-        return ""
+    last_err = ""
+    for attempt in range(retries + 1):
+        req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+        try:
+            with _urlreq.urlopen(req, timeout=timeout) as r:
+                data = json.loads(r.read().decode("utf-8"))
+            parts = data["candidates"][0]["content"]["parts"]
+            return next((p["text"].strip() for p in parts if "text" in p), "")
+        except Exception as e:
+            last_err = str(e)
+            # retry only on transient errors (503/429/timeout)
+            transient = "503" in last_err or "429" in last_err or "timed out" in last_err.lower()
+            if attempt < retries and transient:
+                time.sleep(1.5 * (attempt + 1))
+                print(f"[Gemini] {last_err} — retry {attempt+1}/{retries}")
+                continue
+            print(f"[Gemini] {last_err}")
+            return ""
+    return ""
 
 
 def llm_call(prompt: str, want_json: bool = False) -> str:
