@@ -744,10 +744,11 @@ def build_html_board(
       {_board_label("Spatial Quality")}<div style="line-height:2;">{spa_chips}</div></div>
   </div>
   {custom_section}
-  <div style="background:#FFFDF7;border-radius:10px;padding:20px;margin-bottom:10px;
-              border:1px solid #D8D0C3;border-left:3px solid {accent};">
-    {_board_label("Concept Statement")}
-    <p style="font-size:14px;color:#3C3830;line-height:1.9;margin:0;">{ko_html}</p>
+  <div style="background:linear-gradient(135deg,#FFFDF7,#FBF5EC);border-radius:12px;padding:28px 32px;margin-bottom:12px;
+              border:1px solid #D8D0C3;border-left:4px solid {accent};
+              box-shadow:0 2px 12px rgba(197,123,87,0.07);">
+    <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 16px;font-weight:700;">Design Intent</p>
+    <p style="font-size:15px;color:#2E2418;line-height:2.1;margin:0;font-family:'Georgia','Times New Roman',serif;font-weight:400;">{ko_html}</p>
   </div>
   <div style="background:#FFFDF7;border-radius:10px;padding:16px;margin-bottom:10px;border:1px solid #D8D0C3;">
     {_board_label("Tags")}<div style="line-height:2.2;">{tag_chips}</div>
@@ -1244,44 +1245,57 @@ with gr.Blocks(
 
     with gr.Row(equal_height=False):
 
-        with gr.Column(scale=1, min_width=260):
+        # ── LEFT SIDEBAR ────────────────────────────────────────
+        with gr.Column(scale=1, min_width=300, elem_classes=["left-panel"]):
+
+            gr.HTML(_section_header("01 · Space & Mood"))
             space_in = gr.Dropdown(choices=SPACE_LIST, value="Library", label="Space Type",
                                    allow_custom_value=True, info="Select or type a custom space")
-            mood_in  = gr.Dropdown(choices=MOOD_LIST,  value="Calm",    label="Mood")
+            mood_in  = gr.Dropdown(choices=MOOD_LIST, value="Calm", label="Mood")
+
+            gr.HTML(_section_header("02 · Concept Prompt"))
             extra_in = gr.Textbox(label="Custom Keywords / Natural Description",
                                    placeholder="예: 따뜻한 우드 톤의 조용한 도서관, 바이오필릭 요소", lines=3)
             with gr.Row():
-                gen_btn   = gr.Button("Generate  ✶", variant="primary")
-                ai_btn    = gr.Button("✨ AI 자동입력", variant="secondary", min_width=110)
-                reset_btn = gr.Button("↺", variant="secondary", min_width=48)
+                ai_btn = gr.Button("✨ AI 자동입력", variant="secondary", min_width=120)
+
+            gr.HTML(_section_header("03 · Generate"))
+            gen_btn   = gr.Button("Generate Concept  ✶", variant="primary", size="lg")
+            with gr.Row():
+                reset_btn = gr.Button("↺ Reset", variant="secondary", min_width=90)
             status_out = gr.Markdown(value="", elem_classes=["status-msg"])
 
-            gr.HTML(_section_header("Examples"))
+            gr.HTML(_section_header("04 · Image Generation"))
+            gr.HTML('<p style="font-size:11px;color:#9A9288;margin:-4px 0 10px;line-height:1.6;">Connect to ComfyUI to generate images via FLUX</p>')
+            with gr.Row():
+                use_external_in = gr.Checkbox(label="Enable", value=True, scale=1)
+                external_url_in = gr.Textbox(label="Server URL", placeholder="http://127.0.0.1:8188", scale=3)
+            neg_prompt_in = gr.Textbox(label="Negative Prompt", lines=2,
+                                        placeholder="blurry, low quality, people, text")
+            with gr.Group(elem_classes=["gen-settings"]):
+                with gr.Row():
+                    steps_in   = gr.Slider(1, 100, step=1,   value=20,  label="Steps")
+                    cfg_in     = gr.Slider(1, 20,  step=0.5, value=1.0, label="CFG")
+                with gr.Row():
+                    imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Size")
+                    seed_in    = gr.Number(value=-1, label="Seed", precision=0)
+
+            gr.HTML(_section_header("05 · Examples"))
             preset_btns = []
             for preset in PRESET_EXAMPLES:
                 btn = gr.Button(f"{preset['label']}  {preset['sub']}",
                                 elem_classes=["example-card"], size="sm")
                 preset_btns.append((btn, preset["data"]))
 
-            gr.HTML(_section_header("History"))
-            history_state   = gr.State([])
-            concept_state   = gr.State("")
+            gr.HTML(_section_header("06 · History"))
+            history_state = gr.State([])
+            concept_state = gr.State("")
             history_dd = gr.Dropdown(label="Recent Generations", choices=[], interactive=True)
 
-            with gr.Accordion("🔌 Image Generation (Future)", open=False):
-                with gr.Row():
-                    use_external_in = gr.Checkbox(label="Enable", value=True, scale=1)
-                    external_url_in = gr.Textbox(label="Server URL", placeholder="http://127.0.0.1:8188", scale=3)
-                neg_prompt_in = gr.Textbox(label="Negative Prompt", lines=2,
-                                            placeholder="blurry, low quality, people, text")
-                with gr.Row():
-                    steps_in = gr.Slider(1, 100, step=1,   value=20,  label="Steps")
-                    cfg_in   = gr.Slider(1, 20,  step=0.5, value=1.0, label="CFG")
-                with gr.Row():
-                    imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Size")
-                    seed_in    = gr.Number(value=-1, label="Seed", precision=0)
+        # ── RIGHT MAIN PANEL ─────────────────────────────────────
+        with gr.Column(scale=2, elem_classes=["right-panel"]):
 
-        with gr.Column(scale=3):
+            gr.HTML(_section_header("Design Parameters"))
             with gr.Row():
                 activity_in = gr.CheckboxGroup(choices=ACTIVITY_LIST, label="UX / Activity", scale=1)
                 material_in = gr.CheckboxGroup(choices=MATERIAL_LIST, label="Material Palette", scale=1)
@@ -1292,14 +1306,36 @@ with gr.Blocks(
             with gr.Tabs(selected=0) as results_tabs:
 
                 with gr.TabItem("🎨  Concept Board", id=0):
-                    gr.Markdown("_Reference image upload (optional)_", elem_classes=["upload-hint"])
+                    gr.HTML("""
+                    <div style="margin:0 0 12px;padding:16px 20px;background:#FFFDF7;
+                                border:1px solid #DDD5C5;border-radius:10px;">
+                      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;
+                                color:#A09888;margin:0 0 10px;font-weight:700;">Reference Images · Optional</p>
+                      <p style="font-size:12px;color:#7A7268;margin:0;line-height:1.7;">
+                        Upload reference photos to use as image slots on the board.
+                        Each slot has a role — <strong style="color:#3C3428;">Main view</strong>,
+                        <strong style="color:#3C3428;">Material detail</strong>, and
+                        <strong style="color:#3C3428;">Atmosphere/lighting</strong>.
+                        Leave empty to auto-generate via AI.
+                      </p>
+                    </div>
+                    """)
                     with gr.Row():
-                        upload_main_in       = gr.Image(label="Slot 1 — Main",       type="pil", height=160)
-                        upload_material_in   = gr.Image(label="Slot 2 — Material",   type="pil", height=160)
-                        upload_atmosphere_in = gr.Image(label="Slot 3 — Atmosphere", type="pil", height=160)
+                        upload_main_in       = gr.Image(
+                            label="Slot 1 · Main View — hero shot, wide angle",
+                            type="pil", height=150)
+                        upload_material_in   = gr.Image(
+                            label="Slot 2 · Material — texture, surface detail",
+                            type="pil", height=150)
+                        upload_atmosphere_in = gr.Image(
+                            label="Slot 3 · Atmosphere — lighting, mood",
+                            type="pil", height=150)
+
                     board_out = gr.HTML(value=BOARD_PLACEHOLDER)
+
+                    gr.HTML('<div style="height:1px;background:#DDD5C5;margin:16px 0 14px;"></div>')
                     with gr.Row():
-                        export_btn  = gr.Button("⬇ Export HTML + PNG", size="sm", variant="secondary")
+                        export_btn  = gr.Button("⬇  Export as HTML + PNG", variant="secondary")
                         export_file = gr.File(label="Download", visible=False, scale=2)
 
                 with gr.TabItem("📝  Prompts", id=1):
