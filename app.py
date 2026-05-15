@@ -614,15 +614,12 @@ def _palette_strip_html(hex_list):
     if not hex_list:
         return ""
     swatches = "".join(
-        f'<div style="flex:1;min-width:50px;height:54px;background:{h};'
-        f'border-radius:6px;position:relative;border:1px solid rgba(0,0,0,0.08);'
-        f'box-shadow:0 1px 2px rgba(0,0,0,0.05);">'
-        f'<span style="position:absolute;bottom:4px;left:6px;font-size:9px;font-weight:600;'
-        f'color:#FFFDF7;text-shadow:0 1px 2px rgba(0,0,0,0.6);letter-spacing:0.5px;">{h}</span>'
+        f'<div style="flex:1;min-width:44px;height:48px;background:{h};'
+        f'border-radius:6px;position:relative;border:1px solid rgba(0,0,0,0.08);">'
+        f'<span style="position:absolute;bottom:4px;left:5px;font-size:8px;font-weight:600;'
+        f'color:#FFFDF7;text-shadow:0 1px 2px rgba(0,0,0,0.6);">{h}</span>'
         f'</div>' for h in hex_list)
-    return (f'<div style="background:#FFFDF7;border-radius:10px;padding:16px;margin-bottom:10px;'
-            f'border:1px solid #D8D0C3;">{_board_label("Color Palette · 추출 색상")}'
-            f'<div style="display:flex;gap:8px;">{swatches}</div></div>')
+    return f'<div style="display:flex;gap:7px;">{swatches}</div>'
 
 
 def build_html_board(
@@ -728,14 +725,14 @@ def build_html_board(
 
   <!-- PALETTE ROW: Color + Material merged -->
   <div style="padding:28px 40px;border-bottom:1px solid #EDE6DA;background:#FDFAF5;">
-    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#B0A898;margin:0 0 20px;font-weight:700;">Palette</p>
-    <div style="display:grid;grid-template-columns:1fr auto;gap:32px;align-items:start;">
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#B0A898;margin:0 0 22px;font-weight:700;">Palette</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start;">
       <div>
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C0B8AE;margin:0 0 12px;font-weight:600;">Color</p>
+        <p style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#C8BEB2;margin:0 0 12px;font-weight:700;">Color</p>
         {palette_html}
       </div>
-      <div style="min-width:280px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C0B8AE;margin:0 0 12px;font-weight:600;">Material</p>
+      <div>
+        <p style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#C8BEB2;margin:0 0 12px;font-weight:700;">Material</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">{mat_blocks}</div>
       </div>
     </div>
