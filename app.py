@@ -150,7 +150,7 @@ KO_DICT = {
 }
 
 SPACE_TYPES = {
-    "Library": {"ko": "독서관", "en_char": "knowledge-rich, contemplative, archival",
+    "Library": {"ko": "도서관", "en_char": "knowledge-rich, contemplative, archival",
                 "ko_intro": "지식과 사색이 공존하는",
                 "img_labels": ["Reading Alcove", "Book Wall", "Study Nook"],
                 "img_icons": ["📚", "🗂️", "🔭"]},
@@ -446,13 +446,13 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
 
 
 _MATERIAL_PHOTO = {
-    "Wood":     "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?w=400&h=400&fit=crop",
-    "Concrete": "https://images.unsplash.com/photo-1514923995763-768e52f4ae1d?w=400&h=400&fit=crop",
-    "Glass":    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&h=400&fit=crop",
+    "Wood":     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
+    "Concrete": "https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=400&h=400&fit=crop",
+    "Glass":    "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&h=400&fit=crop",
     "Fabric":   "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop",
-    "Metal":    "https://images.unsplash.com/photo-1567360425618-1594206637d2?w=400&h=400&fit=crop",
-    "Stone":    "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&h=400&fit=crop",
-    "Brick":    "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&h=400&fit=crop",
+    "Metal":    "https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=400&h=400&fit=crop",
+    "Stone":    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
+    "Brick":    "https://images.unsplash.com/photo-1520333789090-1afc82db536a?w=400&h=400&fit=crop",
 }
 _SPACE_PHOTO = {
     "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
@@ -900,16 +900,31 @@ def suggest_materials_from_image(img, cur_mat, cur_light, cur_mood, cur_spatial)
 
 def export_board_html(board_html):
     if not board_html or "dashed" in board_html:
-        return None
-    html = ("<!DOCTYPE html><html><head><meta charset='utf-8'>"
-            "<title>AI Interior Concept Board</title>"
-            "<style>body{margin:0;padding:20px;background:#F7F3EA;"
-            "font-family:'Helvetica Neue',Arial,sans-serif;}</style>"
-            f"</head><body>{board_html}</body></html>")
+        gr.Warning("Generate a concept board first.")
+        return gr.update(visible=False)
+    png_btn = (
+        "<div style='text-align:center;margin:20px 0;'>"
+        "<button onclick=\"(function(){"
+        "var s=document.createElement('script');"
+        "s.src='https://html2canvas.hertzen.com/dist/html2canvas.min.js';"
+        "s.onload=function(){"
+        "html2canvas(document.querySelector('.board-export'),{scale:2,useCORS:true}).then(function(c){"
+        "var a=document.createElement('a');a.download='concept-board.png';"
+        "a.href=c.toDataURL('image/png');a.click();});};"
+        "document.head.appendChild(s);}())\" "
+        "style='padding:10px 28px;background:#C57B57;color:#fff;border:none;border-radius:8px;"
+        "font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;'>⬇ Download as PNG</button></div>"
+    )
+    wrapped = f'<div class="board-export">{board_html}</div>'
+    html = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
+            f"<title>AI Interior Concept Board</title>"
+            f"<style>body{{margin:0;padding:20px;background:#F7F3EA;"
+            f"font-family:'Helvetica Neue',Arial,sans-serif;}}</style>"
+            f"</head><body>{png_btn}{wrapped}</body></html>")
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, encoding="utf-8")
     tmp.write(html)
     tmp.close()
-    return tmp.name
+    return gr.update(visible=True, value=tmp.name)
 
 
 def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko):
@@ -1121,7 +1136,7 @@ PRESET_EXAMPLES = [
     {"label": "🌿  Calm Reading Room", "sub": "Wood · Stone · Natural Light · Calm",
      "data": ("Library", ["Reading", "Rest"], ["Wood", "Stone"],
               ["Natural Light", "Diffused"], "Calm", ["Compact", "Enclosed"],
-              "차분한 독서 공간, 자연광, 목재 서가")},
+              "calm reading space, natural light, oak shelving")},
     {"label": "🔮  Futuristic Gallery Space", "sub": "Glass · Metal · Concrete · Dramatic",
      "data": ("Gallery", ["Exhibition", "Creative"], ["Glass", "Metal", "Concrete"],
               ["Dramatic", "Accent Lighting"], "Futuristic", ["Open", "High Ceiling"],
@@ -1214,7 +1229,7 @@ with gr.Blocks(
                         upload_atmosphere_in = gr.Image(label="Slot 3 — Atmosphere", type="pil", height=160)
                     board_out = gr.HTML(value=BOARD_PLACEHOLDER)
                     with gr.Row():
-                        export_btn  = gr.Button("Export HTML", size="sm", variant="secondary")
+                        export_btn  = gr.Button("⬇ Export HTML + PNG", size="sm", variant="secondary")
                         export_file = gr.File(label="Download", visible=False, scale=2)
 
                 with gr.TabItem("📝  Prompts", id=1):
@@ -1282,7 +1297,6 @@ with gr.Blocks(
 
     # Export
     export_btn.click(fn=export_board_html, inputs=[board_out], outputs=[export_file])
-    export_btn.click(fn=lambda: gr.update(visible=True), inputs=[], outputs=[export_file])
 
 
 FORCE_CSS = """<style>
