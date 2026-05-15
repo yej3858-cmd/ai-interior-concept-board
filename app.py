@@ -695,79 +695,90 @@ def build_html_board(
             box-shadow:0 4px 32px rgba(38,50,56,0.08);overflow:hidden;">
 
   <!-- HEADER -->
-  <div style="padding:32px 36px 24px;border-bottom:1px solid #EDE6DA;">
+  <div style="padding:36px 40px 28px;border-bottom:1px solid #EDE6DA;">
     {warning_banner}
-    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#A09888;margin:0 0 14px;font-weight:700;">
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#B0A898;margin:0 0 16px;font-weight:700;">
       Interior Concept Board &nbsp;·&nbsp; {space or 'Interior Space'}
     </p>
-    <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
-      <h1 style="font-size:36px;font-weight:300;letter-spacing:-0.5px;margin:0;
-                 color:#1E1A14;font-family:'Georgia','Times New Roman',serif;">{sp['ko']}</h1>
-      <span style="font-size:15px;color:#7A7268;font-weight:400;letter-spacing:0.3px;">{mood_label}</span>
+    <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:12px;">
+      <h1 style="font-size:42px;font-weight:300;letter-spacing:-1px;margin:0;
+                 color:#1E1A14;font-family:'Georgia','Times New Roman',serif;line-height:1.1;">{sp['ko']}</h1>
+      <span style="font-size:16px;color:#8A8278;font-weight:300;letter-spacing:0.5px;font-family:'Georgia',serif;font-style:italic;">{mood_label}</span>
     </div>
-    <p style="font-size:12px;color:#8A8278;margin:0 0 16px;line-height:1.6;letter-spacing:0.3px;">
+    <p style="font-size:11px;color:#A09888;margin:0 0 20px;line-height:1.6;letter-spacing:1.5px;text-transform:uppercase;">
       {sp['en_char'].replace(',', ' &nbsp;·&nbsp;')}
     </p>
-    <div style="width:40px;height:3px;background:{accent};border-radius:2px;"></div>
+    <div style="width:48px;height:3px;background:{accent};border-radius:2px;"></div>
   </div>
 
-  <!-- DESIGN INTENT -->
-  <div style="padding:28px 36px;background:linear-gradient(135deg,#FFFDF7,#FBF4EA);border-bottom:1px solid #EDE6DA;">
-    <div style="display:flex;align-items:flex-start;gap:16px;">
-      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:{accent};
-                  display:flex;align-items:center;justify-content:center;margin-top:2px;">
-        <span style="font-size:16px;">✦</span>
-      </div>
-      <div style="flex:1;">
-        <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 12px;font-weight:700;">Design Intent</p>
-        <p style="font-size:15px;color:#2E2418;line-height:2.1;margin:0;font-family:'Georgia','Times New Roman',serif;font-weight:400;">{ko_html}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN IMAGE PROMPT -->
-  <div style="padding:16px 36px;background:#F9F4EC;border-bottom:1px solid #EDE6DA;">
-    <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 8px;font-weight:700;">Main Image Prompt</p>
-    <p style="font-size:12px;color:#6F6A60;margin:0;line-height:1.8;font-style:italic;">&ldquo;{main_prompt}&rdquo;</p>
-  </div>
-
-  <!-- IMAGE GRID -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:240px 240px;gap:3px;background:#E0D8CC;">
+  <!-- IMAGE GRID: hero left (full height), 2 secondary right stacked -->
+  <div style="display:grid;grid-template-columns:3fr 2fr;grid-template-rows:260px 220px;gap:2px;background:#DDD5C5;">
     <div style="grid-row:1/3;overflow:hidden;position:relative;">{hero_tile}</div>
     <div style="overflow:hidden;position:relative;">{mid_tile}</div>
     <div style="overflow:hidden;position:relative;">{bot_tile}</div>
   </div>
 
-  <!-- COLOR + MATERIAL -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #EDE6DA;">
-    <div style="padding:20px 24px;border-right:1px solid #EDE6DA;">
-      {palette_html}
-    </div>
-    <div style="padding:20px 24px;">
-      {_board_label("Material Palette")}
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">{mat_blocks}</div>
+  <!-- DESIGN INTENT -->
+  <div style="padding:36px 40px;background:linear-gradient(160deg,#FFFDF7 60%,#F7F0E4);border-bottom:1px solid #EDE6DA;">
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#C57B57;margin:0 0 18px;font-weight:700;">Design Intent</p>
+    <p style="font-size:17px;color:#2E2418;line-height:2.15;margin:0;
+              font-family:'Georgia','Times New Roman',serif;font-weight:400;
+              max-width:780px;">{ko_html}</p>
+  </div>
+
+  <!-- PALETTE ROW: Color + Material merged -->
+  <div style="padding:28px 40px;border-bottom:1px solid #EDE6DA;background:#FDFAF5;">
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:#B0A898;margin:0 0 20px;font-weight:700;">Palette</p>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:32px;align-items:start;">
+      <div>
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C0B8AE;margin:0 0 12px;font-weight:600;">Color</p>
+        {palette_html}
+      </div>
+      <div style="min-width:280px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C0B8AE;margin:0 0 12px;font-weight:600;">Material</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">{mat_blocks}</div>
+      </div>
     </div>
   </div>
 
-  <!-- ACTIVITY / LIGHTING / SPATIAL -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid #EDE6DA;">
-    <div style="padding:18px 20px;border-right:1px solid #EDE6DA;">
-      {_board_label("UX Activity")}<div style="line-height:2;">{act_chips}</div></div>
-    <div style="padding:18px 20px;border-right:1px solid #EDE6DA;">
-      {_board_label("Lighting")}<div style="line-height:2;">{lit_chips}</div></div>
-    <div style="padding:18px 20px;">
-      {_board_label("Spatial Quality")}<div style="line-height:2;">{spa_chips}</div></div>
+  <!-- INFO CARDS: Activity / Lighting / Spatial — equal size -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid #EDE6DA;">
+    <div style="padding:24px 26px;border-right:1px solid #EDE6DA;">
+      <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 14px;font-weight:700;">UX Activity</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;line-height:1;">{act_chips}</div>
+    </div>
+    <div style="padding:24px 26px;border-right:1px solid #EDE6DA;">
+      <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 14px;font-weight:700;">Lighting</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;line-height:1;">{lit_chips}</div>
+    </div>
+    <div style="padding:24px 26px;">
+      <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 14px;font-weight:700;">Spatial Quality</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;line-height:1;">{spa_chips}</div>
+    </div>
   </div>
 
-  <!-- CUSTOM + TAGS -->
-  {f'<div style="padding:18px 24px;border-bottom:1px solid #EDE6DA;">{custom_section}</div>' if custom_descriptors else ''}
-  <div style="padding:18px 24px;border-bottom:1px solid #EDE6DA;">
-    {_board_label("Tags")}<div style="line-height:2.2;">{tag_chips}</div>
+  <!-- CUSTOM CONCEPT ELEMENTS (emphasized, only if present) -->
+  {f'''<div style="padding:28px 40px;border-bottom:1px solid #EDE6DA;
+                  background:linear-gradient(135deg,#FBF5EE,#F5EDE2);border-left:4px solid {accent};">
+    <p style="font-size:8px;letter-spacing:5px;text-transform:uppercase;color:{accent};margin:0 0 16px;font-weight:700;">Custom Concept</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">{"".join(_chip(d,"#F5EDE6","#6B3E28","#D4B8A8") for d in custom_descriptors)}</div>
+  </div>''' if custom_descriptors else ''}
+
+  <!-- TAGS (compact, subdued) -->
+  <div style="padding:18px 40px;border-bottom:1px solid #EDE6DA;background:#FAF7F2;">
+    <p style="font-size:7px;letter-spacing:4px;text-transform:uppercase;color:#C8C0B4;margin:0 0 10px;font-weight:700;">Tags</p>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;">{tag_chips}</div>
+  </div>
+
+  <!-- PROMPT REFERENCE (small, bottom) -->
+  <div style="padding:16px 40px;background:#F5F0E8;">
+    <p style="font-size:7px;letter-spacing:4px;text-transform:uppercase;color:#C8C0B4;margin:0 0 6px;font-weight:700;">Main Image Prompt Reference</p>
+    <p style="font-size:11px;color:#A09888;margin:0;line-height:1.7;font-style:italic;">&ldquo;{main_prompt}&rdquo;</p>
   </div>
 
   <!-- FOOTER -->
-  <div style="padding:14px 24px;text-align:center;background:#F9F4EC;">
-    <p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#C8C4BC;margin:0;">AI Interior Concept Board Generator</p>
+  <div style="padding:12px 40px;text-align:center;background:#EDE6DA;">
+    <p style="font-size:7px;letter-spacing:5px;text-transform:uppercase;color:#C0B8AE;margin:0;">AI Interior Concept Board Generator</p>
   </div>
 </div>
 """
