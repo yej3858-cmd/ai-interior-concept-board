@@ -450,23 +450,27 @@ def build_tags(space, activities, materials, lighting, mood, spatial, custom_des
 
 def build_korean(space, activities, materials, lighting, mood, spatial,
                  translated_extra, custom_descriptors):
-    sp = SPACE_TYPES.get(space)
-    md = MOOD_DATA.get(mood, {"ko": "차분하고 세련된"})
-    sp_ko    = sp["ko"]       if sp else (space or "인테리어 공간")
-    sp_intro = sp["ko_intro"] if sp else "섬세하게 계획된"
-    mat_ko = " · ".join(MATERIAL_DATA[m]["ko"] for m in materials  if m in MATERIAL_DATA) or "현대적 소재"
-    act_ko = " · ".join(ACTIVITY_DATA[a]["ko"] for a in activities if a in ACTIVITY_DATA) or "다목적"
-    spt_ko = " · ".join(SPATIAL_DATA[s]["ko"]  for s in spatial    if s in SPATIAL_DATA)  or "개방형"
-    lit_ko = " · ".join(LIGHTING_DATA[l]["ko"] for l in lighting   if l in LIGHTING_DATA) or "균형 조명"
+    """English fallback concept statement (used when AI is unavailable)."""
+    sp  = SPACE_TYPES.get(space)
+    md  = MOOD_DATA.get(mood, {"en_adj": "calm and refined"})
+    sp_en   = sp["en_char"] if sp else "contemporary interior"
+    mat_en  = ", ".join(m.lower() for m in materials[:3]) or "natural materials"
+    act_en  = ", ".join(ACTIVITY_DATA[a].get("ko", a) and a.lower()
+                        for a in activities[:3]) or "varied activities"
+    lit_en  = ", ".join(LIGHTING_DATA[l]["desc"] for l in lighting[:2]
+                        if l in LIGHTING_DATA) or "balanced lighting"
+    spt_en  = ", ".join(SPATIAL_DATA[s]["desc"]  for s in spatial[:2]
+                        if s in SPATIAL_DATA)  or "a thoughtfully composed space"
     custom_str = ""
     if custom_descriptors:
-        listed = ", ".join(custom_descriptors)
-        custom_str = f" **{listed}** 등의 특별한 개념 요소가 공간에 통합됩니다."
+        listed = ", ".join(f"**{d}**" for d in custom_descriptors[:4])
+        custom_str = f" The concept is further defined by {listed}."
     return (
-        f"{sp_intro} **{sp_ko}**은 **{md['ko']}** 분위기를 중심으로 "
-        f"{mat_ko} 소재와 {lit_ko}을 통해 공간의 정체성을 형성합니다. "
-        f"{spt_ko} 공간 구성 속에서 {act_ko} 활동을 지원하며, "
-        f"사용자에게 목적과 감성이 공존하는 경험을 제공합니다.{custom_str}"
+        f"A **{md['en_adj']}** {space or 'interior'} defined by **{sp_en}** qualities. "
+        f"**{mat_en.title()}** surfaces establish the material language, "
+        f"while {lit_en} shapes the spatial atmosphere. "
+        f"The layout supports **{act_en}** within {spt_en}, "
+        f"creating an environment where purpose and sensory experience coexist.{custom_str}"
     )
 
 
