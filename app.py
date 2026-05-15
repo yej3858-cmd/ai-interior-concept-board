@@ -755,26 +755,23 @@ def generate_concept(
     tags    = build_tags(space, activities, materials, lighting, mood, spatial, custom_descriptors)
     ko_stmt = build_korean(space, activities, materials, lighting, mood, spatial,
                            translated_extra, custom_descriptors)
-    if GEMINI_KEY:
+    if GEMINI_KEY or OLLAMA_URL:
         ctx = (f"Space: {space}, Mood: {mood}, Materials: {materials or '-'}, "
                f"Lighting: {lighting or '-'}, Activities: {activities or '-'}, "
                f"Spatial: {spatial or '-'}, Extra: {translated_extra or '-'}")
-        gp = gemini_call(
+        gp = llm_call(
             "You are an interior design director. Output JSON only.\n"
             f"Context: {ctx}\n"
             "JSON: {\"statement\":\"3-4 sentence English concept statement, poetic and specific (use **bold** for key terms)\","
             f"\"main\":\"{space} interior — main view, cinematic architectural photography, one sentence\","
             f"\"material\":\"{space} — material and detail close-up, one sentence\","
             f"\"atmosphere\":\"{space} — lighting and atmosphere, one sentence\"}}",
-            want_json=True, timeout=20)
-        try:
-            j = json.loads(gp) if gp else {}
-            if j.get("statement"): ko_stmt = j["statement"]
-            if j.get("main"): main_prompt = j["main"]
-            if j.get("material"): material_prompt = j["material"]
-            if j.get("atmosphere"): atmosphere_prompt = j["atmosphere"]
-        except Exception:
-            pass
+            want_json=True)
+        j = _safe_json(gp)
+        if j.get("statement"): ko_stmt = j["statement"]
+        if j.get("main"): main_prompt = j["main"]
+        if j.get("material"): material_prompt = j["material"]
+        if j.get("atmosphere"): atmosphere_prompt = j["atmosphere"]
     future_main = future_material = future_atmosphere = None
     warning = ""
     if use_external and external_url and external_url.strip():
@@ -833,9 +830,9 @@ def ai_autofill(text):
         f"spatial (배열): {SPATIAL_LIST}\n"
         "형식: {\"space\":\"\",\"mood\":\"\",\"materials\":[],\"lighting\":[],\"activities\":[],\"spatial\":[]}"
     )
-    out = gemini_call(prompt, want_json=True, timeout=20)
+    out = llm_call(prompt, want_json=True)
     if not out:
-        gr.Warning("No Gemini response (network or API key issue)")
+        gr.Warning("No AI response (check Gemini API key or Ollama connection)")
         return (gr.update(),) * 6
     try:
         j = _safe_json(out)
