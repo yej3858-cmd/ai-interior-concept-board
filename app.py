@@ -476,7 +476,7 @@ def _img_tile(label: str, icon: str, mat_hex: str, height: str = "100%", photo: 
                    '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
                    'font-size:11px;color:rgba(80,70,60,0.5);letter-spacing:1px;pointer-events:none;'
                    'background:rgba(255,253,247,0.6);padding:4px 10px;border-radius:20px;z-index:-1;">'
-                   'AI 이미지 생성 중…</div>')
+                   'Generating AI image…</div>')
     else:
         pale  = _pale_tint(mat_hex, 0.12)
         light = _pale_tint(mat_hex, 0.22)
@@ -692,7 +692,7 @@ def build_html_board(
   {custom_section}
   <div style="background:#FFFDF7;border-radius:10px;padding:20px;margin-bottom:10px;
               border:1px solid #D8D0C3;border-left:3px solid {accent};">
-    {_board_label("개념 설명 &nbsp;·&nbsp; Concept Statement")}
+    {_board_label("Concept Statement")}
     <p style="font-size:14px;color:#3C3830;line-height:1.9;margin:0;">{ko_html}</p>
   </div>
   <div style="background:#FFFDF7;border-radius:10px;padding:16px;margin-bottom:10px;border:1px solid #D8D0C3;">
@@ -734,15 +734,16 @@ def generate_concept(
                f"Lighting: {lighting or '-'}, Activities: {activities or '-'}, "
                f"Spatial: {spatial or '-'}, Extra: {translated_extra or '-'}")
         gp = gemini_call(
-            "당신은 인테리어 디자이너입니다. 아래 컨셉에 대해 출력하세요. "
-            "JSON으로만 응답: {\"ko\":\"3-4문장 한국어 컨셉 설명, 시적이고 구체적 (Markdown **bold** 강조)\","
-            "\"main\":\"슬롯1 메인 뷰 이미지 프롬프트 영어 한 문장 (cinematic, photographic)\","
-            "\"material\":\"슬롯2 재료/디테일 클로즈업 영어 한 문장\","
-            "\"atmosphere\":\"슬롯3 분위기/조명 영어 한 문장\"}\n\n" + ctx,
+            "You are an interior design director. Output JSON only.\n"
+            f"Context: {ctx}\n"
+            "JSON: {\"statement\":\"3-4 sentence English concept statement, poetic and specific (use **bold** for key terms)\","
+            f"\"main\":\"{space} interior — main view, cinematic architectural photography, one sentence\","
+            f"\"material\":\"{space} — material and detail close-up, one sentence\","
+            f"\"atmosphere\":\"{space} — lighting and atmosphere, one sentence\"}}",
             want_json=True, timeout=20)
         try:
             j = json.loads(gp) if gp else {}
-            if j.get("ko"): ko_stmt = j["ko"]
+            if j.get("statement"): ko_stmt = j["statement"]
             if j.get("main"): main_prompt = j["main"]
             if j.get("material"): material_prompt = j["material"]
             if j.get("atmosphere"): atmosphere_prompt = j["atmosphere"]
@@ -778,8 +779,8 @@ def generate_concept(
         seed_base=int(seed) if seed and int(seed) >= 0 else 0,
     )
     n_uploads = sum(1 for x in [upload_main, upload_material, upload_atmosphere] if x is not None)
-    upload_note = f" · {n_uploads}장 이미지 사용" if n_uploads else ""
-    status_md = f"✓ {space} · {mood}{upload_note} — 콘셀 보드 생성 완료"
+    upload_note = f" · {n_uploads} image{'s' if n_uploads>1 else ''} used" if n_uploads else ""
+    status_md = f"✓ {space} · {mood}{upload_note} — Concept board generated"
     return main_prompt, material_prompt, atmosphere_prompt, tags, ko_stmt, board, status_md
 
 
@@ -808,7 +809,7 @@ def ai_autofill(text):
     )
     out = gemini_call(prompt, want_json=True, timeout=20)
     if not out:
-        gr.Warning("Gemini 응답 없음 (네트워크 또는 키 문제)")
+        gr.Warning("No Gemini response (network or API key issue)")
         return (gr.update(),) * 6
     try:
         j = _safe_json(out)
@@ -1071,7 +1072,7 @@ HEADER_HTML = """
     </h1>
   </div>
   <p style="font-size:12px;color:#8A8278;margin:0;text-align:right;line-height:1.7;max-width:280px;">
-    공간·분위기 선택 후 Generate →<br>3개 프롬프트 + 콘셀 보드 자동 생성
+    Select space &amp; mood → Generate →<br>3 prompts + concept board auto-generated
   </p>
 </div>
 """
@@ -1105,9 +1106,9 @@ BOARD_PLACEHOLDER = """
   <div style="font-size:44px;margin-bottom:20px;opacity:0.45;">🏛️</div>
   <p style="font-size:15px;font-family:'Georgia',serif;font-weight:300;
             color:#9A9288;line-height:2.0;margin:0;">
-    위에서 공간을 설정하고<br>
-    <span style="color:#C57B57;font-weight:600;">Generate Concept ✶</span> 를 클릭하거나<br>
-    아래 예시 카드를 선택하세요.
+    Set space &amp; mood above, then click<br>
+    <span style="color:#C57B57;font-weight:600;">Generate Concept ✶</span><br>
+    or choose an example card below.
   </p>
 </div>
 """
@@ -1206,7 +1207,7 @@ with gr.Blocks(
             with gr.Tabs(selected=0) as results_tabs:
 
                 with gr.TabItem("🎨  Concept Board", id=0):
-                    gr.Markdown("_참고 이미지 업로드 (선택사항)_", elem_classes=["upload-hint"])
+                    gr.Markdown("_Reference image upload (optional)_", elem_classes=["upload-hint"])
                     with gr.Row():
                         upload_main_in       = gr.Image(label="Slot 1 — Main",       type="pil", height=160)
                         upload_material_in   = gr.Image(label="Slot 2 — Material",   type="pil", height=160)
@@ -1221,9 +1222,9 @@ with gr.Blocks(
                     material_prompt_out = gr.Textbox(label="Slot 2 — Material / Detail", lines=3)
                     atmo_prompt_out     = gr.Textbox(label="Slot 3 — Atmosphere",        lines=3)
 
-                with gr.TabItem("🏷️  Tags & Korean", id=2):
+                with gr.TabItem("🏷️  Tags & Statement", id=2):
                     tags_out   = gr.Textbox(label="Hashtags", lines=3)
-                    korean_out = gr.Markdown(value="*Generate 후 한국어 개념 설명이 표시됩니다.*")
+                    korean_out = gr.Markdown(value="*Concept statement will appear after Generate.*")
 
     inputs = [
         space_in, activity_in, material_in, lighting_in,
