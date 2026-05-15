@@ -968,7 +968,7 @@ def suggest_materials_from_image(img, cur_mat, cur_light, cur_mood, cur_spatial)
 
 
 def export_board_html(board_html):
-    if not board_html or "Material Palette" not in board_html:
+    if not board_html or "Design Intent" not in board_html:
         gr.Warning("Generate a concept board first.")
         return gr.update(visible=False)
     png_btn = (
