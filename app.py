@@ -100,6 +100,23 @@ def _safe_json(text: str) -> dict:
     except Exception:
         return {}
 
+OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://localhost:11434").rstrip("/")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2").strip()
+
+
+def ollama_call(prompt: str, want_json: bool = False, timeout: int = 40) -> str:
+    url = f"{OLLAMA_URL}/api/generate"
+    body = json.dumps({"model": OLLAMA_MODEL, "prompt": prompt,
+                       "stream": False, "format": "json" if want_json else ""}).encode()
+    req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+    try:
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())["response"].strip()
+    except Exception as e:
+        print(f"[Ollama] {e}")
+        return ""
+
+
 def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
     if not GEMINI_KEY:
         return ""
@@ -120,6 +137,15 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25) -> str:
     except Exception as e:
         print(f"[Gemini] {e}")
         return ""
+
+
+def llm_call(prompt: str, want_json: bool = False) -> str:
+    """Gemini first, fallback to Ollama."""
+    if GEMINI_KEY:
+        result = gemini_call(prompt, want_json=want_json)
+        if result:
+            return result
+    return ollama_call(prompt, want_json=want_json)
 
 
 KO_DICT = {
