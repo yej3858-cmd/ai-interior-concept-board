@@ -1123,6 +1123,42 @@ def history_choices(history):
     return gr.update(choices=[e["key"] for e in history], value=None)
 
 
+def evaluate_images(img_main, img_mat, img_atmo, space, mood):
+    if not GEMINI_KEY:
+        return "⚠️ Gemini API key required for evaluation."
+    if img_main is None and img_mat is None and img_atmo is None:
+        return "Generate images first."
+    results = []
+    slots = [("Main View", img_main), ("Material Detail", img_mat), ("Atmosphere", img_atmo)]
+    for label, img in slots:
+        if img is None:
+            results.append(f"**{label}**: —")
+            continue
+        b64 = pil_to_b64(img)
+        if not b64:
+            continue
+        prompt = (f"You are an interior design critic. Evaluate this {label.lower()} image for a {mood} {space}. "
+                  f"In 1-2 sentences: comment on how well it conveys the intended mood and materiality. "
+                  f"End with a score like [7/10]. Be concise and specific.")
+        url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+               f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
+        body = json.dumps({"contents": [{"parts": [
+            {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
+            {"text": prompt}]}],
+            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 200,
+                                 "thinkingConfig": {"thinkingBudget": 0}}
+        }).encode("utf-8")
+        req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+        try:
+            with _urlreq.urlopen(req, timeout=25) as r:
+                data = json.loads(r.read().decode("utf-8"))
+            txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            results.append(f"**{label}**: {txt}")
+        except Exception as e:
+            results.append(f"**{label}**: evaluation failed ({e})")
+    return "\n\n".join(results)
+
+
 def load_favorites_from_file():
     if FAVORITES_FILE.exists():
         try:
@@ -1542,6 +1578,8 @@ with gr.Blocks(
                         img_main_out = gr.Image(label="Main View", type="pil", interactive=False)
                         img_mat_out  = gr.Image(label="Material Detail", type="pil", interactive=False)
                         img_atmo_out = gr.Image(label="Atmosphere", type="pil", interactive=False)
+                    eval_btn = gr.Button("🔍 Evaluate Images (Gemini)", variant="secondary", size="sm")
+                    eval_out = gr.Markdown(value="")
 
     inputs = [
         space_in, activity_in, material_in, lighting_in,
@@ -1621,6 +1659,11 @@ with gr.Blocks(
     # Export
     export_btn.click(fn=export_board_html, inputs=[board_out], outputs=[export_file])
     pdf_btn.click(fn=export_board_pdf, inputs=[board_out], outputs=[export_file])
+
+    # Evaluate images
+    eval_btn.click(fn=evaluate_images,
+                   inputs=[img_main_out, img_mat_out, img_atmo_out, space_in, mood_in],
+                   outputs=[eval_out])
 
     # Pin / Favorites
     pin_btn.click(fn=pin_board,
