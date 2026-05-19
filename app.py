@@ -466,6 +466,7 @@ def build_prompts(space, activities, materials, lighting, mood, spatial,
     act = ", ".join(a.lower() for a in activities) if activities else "multipurpose use"
     custom_str  = f" Additional elements: {', '.join(custom_descriptors)}." if custom_descriptors else ""
     space_label = (space or "interior space").lower()
+    style_anchor = f"consistent {md['en_adj']} style, {mat}, {photo_style}"
     main_prompt = (
         f"A {md['en_adj']} {space_label}, {sp['en_char']}. "
         f"Spatial quality: {spt}. Primary materials: {mat}. "
@@ -476,12 +477,12 @@ def build_prompts(space, activities, materials, lighting, mood, spatial,
         f"Material and texture detail study for a {md['en_adj']} {space_label}. "
         f"Close-up surfaces: {mat}. {sp['en_char']}.{custom_str} "
         f"Illuminated by {lit}. "
-        f"Macro interior photography, material palette reference, {photo_style}."
+        f"Macro interior photography, material palette reference, {style_anchor}."
     )
     atmosphere_prompt = (
         f"Atmospheric interior mood: {md['en_adj']} ambiance in a {space_label}. "
         f"{spt}. Lit by {lit}.{custom_str} Designed for {act}. "
-        f"Experiential space photography, human-scale interior perspective, {photo_style}."
+        f"Experiential space photography, human-scale interior perspective, {style_anchor}."
     )
     return main_prompt, material_prompt, atmosphere_prompt
 
