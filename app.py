@@ -319,6 +319,7 @@ def extract_custom_descriptors(extra: str) -> tuple:
 
 
 WORKFLOW_PATH = Path("comfyui_workflow.json")
+HISTORY_FILE  = Path("history.json")
 
 
 def _future_load_workflow():
@@ -833,6 +834,7 @@ def generate_concept(
     space, activities, materials, lighting, mood, spatial, extra,
     upload_main, upload_material, upload_atmosphere,
     use_external, external_url, neg_prompt, steps, cfg, img_size, seed,
+    denoise=0.65,
 ):
     space      = space or "Library"
     mood       = mood  or "Calm"
@@ -890,11 +892,11 @@ def generate_concept(
                             else:                     ref_atmo = fname
                         except Exception:
                             pass
-                wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val, ref_main)
+                wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val, ref_main, denoise=float(denoise))
                 future_main = _future_comfyui_generate(url_str, wf1)
-                wf2 = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1, ref_mat)
+                wf2 = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1, ref_mat, denoise=float(denoise))
                 future_material = _future_comfyui_generate(url_str, wf2)
-                wf3 = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2, ref_atmo)
+                wf3 = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2, ref_atmo, denoise=float(denoise))
                 future_atmosphere = _future_comfyui_generate(url_str, wf3)
             else:
                 warning = "⚠️ comfyui_workflow.json not found — place workflow file in app directory"
@@ -1064,11 +1066,45 @@ def export_board_html(board_html):
     return gr.update(visible=True, value=tmp.name)
 
 
+def export_board_pdf(board_html):
+    if not board_html or "Design Intent" not in board_html:
+        gr.Warning("Generate a concept board first.")
+        return gr.update(visible=False)
+    html = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
+            f"<title>AI Interior Concept Board</title>"
+            f"<style>*{{box-sizing:border-box;}}body{{margin:0;padding:20px;background:#F5F0E8;"
+            f"font-family:'Helvetica Neue',Arial,sans-serif;}}"
+            f".board-export{{max-width:960px;margin:0 auto;}}"
+            f"@media print{{body{{padding:0;}}button{{display:none!important;}}}}</style>"
+            f"<script>window.onload=function(){{window.print();}}</script>"
+            f"</head><body><div class='board-export'>{board_html}</div></body></html>")
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, encoding="utf-8")
+    tmp.write(html)
+    tmp.close()
+    return gr.update(visible=True, value=tmp.name)
+
+
 def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko):
     entry = {"key": f"{space} · {mood} — {time.strftime('%H:%M')}",
              "board": board, "main": main_p, "mat": mat_p,
              "atmo": atmo_p, "tags": tags, "ko": ko}
-    return ([entry] + history)[:5]
+    updated = ([entry] + history)[:10]
+    try:
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump([{k: v for k, v in e.items() if k != "board"} | {"board": e["board"][:5000]} for e in updated], f, ensure_ascii=False)
+    except Exception:
+        pass
+    return updated
+
+
+def load_history_from_file():
+    if HISTORY_FILE.exists():
+        try:
+            with open(HISTORY_FILE, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
 
 
 def load_history_entry(history, key):
@@ -1298,6 +1334,13 @@ BOARD_PLACEHOLDER = """
 </div>
 """
 
+STYLE_PRESETS = [
+    {"label": "🪵 Japandi", "data": ("Living Room", ["Rest", "Reading"], ["Wood", "Linen", "Paper"], ["Natural Light", "Diffused"], "Minimal", ["Low Ceiling", "Intimate"], "japandi style, neutral palette, handcraft textures, zen simplicity")},
+    {"label": "🌾 Wabi-sabi", "data": ("Living Room", ["Rest", "Meditation"], ["Raw Concrete", "Clay", "Linen"], ["Diffused", "Candle-like"], "Wabi-sabi", ["Compact", "Enclosed"], "wabi-sabi, imperfect textures, aged wood, organic forms, muted earth tones")},
+    {"label": "🏗️ Brutalist", "data": ("Gallery", ["Exhibition", "Creative"], ["Concrete", "Metal", "Glass"], ["Dramatic", "Accent Lighting"], "Futuristic", ["High Ceiling", "Open"], "raw concrete, exposed structure, bold geometry, industrial materiality")},
+    {"label": "⬜ Minimalist", "data": ("Living Room", ["Rest", "Work"], ["White Plaster", "Glass", "Metal"], ["Natural Light", "Indirect"], "Minimal", ["Open", "High Ceiling"], "pure minimalism, white walls, hidden storage, uncluttered surfaces")},
+]
+
 PRESET_EXAMPLES = [
     {"label": "📚  Creative Library Lounge", "sub": "Wood · Fabric · Layered · Cozy",
      "data": ("Library", ["Reading", "Creative", "Social"], ["Wood", "Fabric", "Stone"],
@@ -1380,18 +1423,28 @@ with gr.Blocks(
                 with gr.Row():
                     imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Size")
                     seed_in    = gr.Number(value=-1, label="Seed", precision=0)
+                denoise_in = gr.Slider(0.1, 1.0, step=0.05, value=0.65, label="Denoise (img2img strength)")
 
-            gr.HTML(_section_header("05 · Examples"))
+            gr.HTML(_section_header("05 · Style Presets"))
+            style_preset_btns = []
+            for sp in STYLE_PRESETS:
+                btn = gr.Button(sp["label"], elem_classes=["example-card"], size="sm")
+                style_preset_btns.append((btn, sp["data"]))
+
+            gr.HTML(_section_header("06 · Examples"))
             preset_btns = []
             for preset in PRESET_EXAMPLES:
                 btn = gr.Button(f"{preset['label']}  {preset['sub']}",
                                 elem_classes=["example-card"], size="sm")
                 preset_btns.append((btn, preset["data"]))
 
-            gr.HTML(_section_header("06 · History"))
-            history_state = gr.State([])
+            gr.HTML(_section_header("07 · History"))
+            _init_history = load_history_from_file()
+            history_state = gr.State(_init_history)
             concept_state = gr.State("")
-            history_dd = gr.Dropdown(label="Recent Generations", choices=[], interactive=True)
+            history_dd = gr.Dropdown(label="Recent Generations",
+                                      choices=[e["key"] for e in _init_history],
+                                      interactive=True)
 
         # ── RIGHT MAIN PANEL ─────────────────────────────────────
         with gr.Column(scale=2, elem_classes=["right-panel"]):
@@ -1425,6 +1478,7 @@ with gr.Blocks(
                     gr.HTML('<div style="height:1px;background:#DDD5C5;margin:16px 0 14px;"></div>')
                     with gr.Row():
                         export_btn  = gr.Button("⬇  Export as HTML + PNG", variant="secondary")
+                        pdf_btn     = gr.Button("⬇  Export as PDF", variant="secondary")
                         export_file = gr.File(label="Download", visible=False, scale=2)
 
                 with gr.TabItem("📝  Prompts", id=1):
@@ -1441,7 +1495,7 @@ with gr.Blocks(
         mood_in, spatial_in, extra_in,
         upload_main_in, upload_material_in, upload_atmosphere_in,
         use_external_in, external_url_in, neg_prompt_in,
-        steps_in, cfg_in, imgsize_in, seed_in,
+        steps_in, cfg_in, imgsize_in, seed_in, denoise_in,
     ]
     outputs = [main_prompt_out, material_prompt_out, atmo_prompt_out,
                tags_out, korean_out, board_out, status_out]
@@ -1480,8 +1534,17 @@ with gr.Blocks(
     ai_btn.click(fn=ai_autofill, inputs=[extra_in],
                  outputs=[space_in, mood_in, material_in, lighting_in, activity_in, spatial_in])
 
-    # Preset cards
+    # Style preset cards
     preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
+    for btn, data in style_preset_btns:
+        (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
+            .then(fn=generate_concept, inputs=inputs, outputs=outputs)
+            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
+            .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
+            .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
+            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+
+    # Preset cards
     for btn, data in preset_btns:
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
@@ -1503,6 +1566,7 @@ with gr.Blocks(
 
     # Export
     export_btn.click(fn=export_board_html, inputs=[board_out], outputs=[export_file])
+    pdf_btn.click(fn=export_board_pdf, inputs=[board_out], outputs=[export_file])
 
 
 FORCE_CSS = """
