@@ -1370,7 +1370,7 @@ with gr.Blocks(
             gr.HTML('<p style="font-size:11px;color:#9A9288;margin:-4px 0 10px;line-height:1.6;">Connect to ComfyUI to generate images via FLUX</p>')
             with gr.Row():
                 use_external_in = gr.Checkbox(label="FLUX via ComfyUI", value=True, scale=1)
-                external_url_in = gr.Textbox(label="Server URL", placeholder="http://127.0.0.1:8188", scale=3)
+                external_url_in = gr.Textbox(label="Server URL", value="http://127.0.0.1:8188", scale=3)
             neg_prompt_in = gr.Textbox(label="Negative Prompt", lines=2,
                                         placeholder="blurry, low quality, people, text")
             with gr.Group(elem_classes=["gen-settings"]):
