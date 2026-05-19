@@ -1630,20 +1630,24 @@ with gr.Blocks(
     preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
     for btn, data in style_preset_btns:
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
+            .then(fn=_btn_loading, inputs=[], outputs=[gen_btn])
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
             .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
-            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd])
+            .then(fn=_btn_ready, inputs=[], outputs=[gen_btn]))
 
     # Preset cards
     for btn, data in preset_btns:
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
+            .then(fn=_btn_loading, inputs=[], outputs=[gen_btn])
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
             .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
             .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
-            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd]))
+            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd])
+            .then(fn=_btn_ready, inputs=[], outputs=[gen_btn]))
 
     # Image upload → Gemini Vision auto-tagging (materials, lighting, mood, spatial)
     for img_in in [upload_main_in, upload_material_in, upload_atmosphere_in]:
