@@ -331,18 +331,19 @@ def _future_load_workflow():
     return None
 
 
-def _future_patch_workflow(workflow, pos_prompt, neg_prompt, width, height, steps, cfg, seed):
+def _future_patch_workflow(workflow, pos_prompt, neg_prompt, width, height, steps, cfg, seed,
+                           ref_image_filename: str = None, denoise: float = 0.65):
     wf = copy.deepcopy(workflow)
-    # FLUX models require cfg=1.0 — detect by checkpoint name
     is_flux = any("flux" in str(node.get("inputs", {}).get("ckpt_name", "")).lower()
                   for node in wf.values())
     if is_flux:
         cfg = 1.0
-    pos_id = neg_id = latent_id = None
+    pos_id = neg_id = latent_id = ksampler_id = None
     for node_id, node in wf.items():
         ct  = node.get("class_type", "")
         inp = node.get("inputs", {})
         if ct in ("KSampler", "KSamplerAdvanced"):
+            ksampler_id = node_id
             if "steps"      in inp: inp["steps"]      = int(steps)
             if "cfg"        in inp: inp["cfg"]         = float(cfg)
             if "seed"       in inp: inp["seed"]        = int(seed)
@@ -365,7 +366,40 @@ def _future_patch_workflow(workflow, pos_prompt, neg_prompt, width, height, step
                                    "EmptyHunyuanLatentVideo", "EmptyMochiLatentVideo"):
             if "width"  in inp: inp["width"]  = int(width)
             if "height" in inp: inp["height"] = int(height)
+    # img2img: inject LoadImage + VAEEncode when ref image provided
+    if ref_image_filename and ksampler_id:
+        vae_src_id = None
+        for node_id, node in wf.items():
+            ct = node.get("class_type", "")
+            if ct == "VAEDecode":
+                v = node.get("inputs", {}).get("vae")
+                if isinstance(v, list): vae_src_id = str(v[0]); break
+        if vae_src_id is None:
+            for node_id, node in wf.items():
+                if node.get("class_type") in ("CheckpointLoaderSimple", "CheckpointLoader"):
+                    vae_src_id = node_id; break
+        if vae_src_id:
+            ids = [int(k) for k in wf.keys() if k.isdigit()]
+            load_id = str(max(ids) + 1)
+            enc_id  = str(max(ids) + 2)
+            wf[load_id] = {"class_type": "LoadImage",
+                           "inputs": {"image": ref_image_filename, "upload": "image"}}
+            wf[enc_id]  = {"class_type": "VAEEncode",
+                           "inputs": {"pixels": [load_id, 0], "vae": [vae_src_id, 2]}}
+            wf[ksampler_id]["inputs"]["latent_image"] = [enc_id, 0]
+            wf[ksampler_id]["inputs"]["denoise"] = denoise
     return wf
+
+
+def _upload_ref_to_comfyui(server_url: str, img) -> str:
+    """Upload PIL image to ComfyUI input folder, return filename."""
+    buf = BytesIO()
+    img.resize((1024, 1024), PILImage.LANCZOS).save(buf, format="PNG")
+    buf.seek(0)
+    resp = _requests.post(f"{server_url.rstrip('/')}/upload/image",
+                          files={"image": ("ref.png", buf, "image/png")}, timeout=30)
+    resp.raise_for_status()
+    return resp.json()["name"]
 
 
 def _future_comfyui_generate(server_url: str, workflow: dict, timeout: int = 300):
@@ -842,12 +876,26 @@ def generate_concept(
                 seed_int = int(seed)
                 seed_val = seed_int if seed_int >= 0 else random.randint(0, 2**31 - 1)
                 neg      = neg_prompt or ""
-                wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val)
-                future_main = _future_comfyui_generate(external_url.strip(), wf1)
-                wf2 = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1)
-                future_material = _future_comfyui_generate(external_url.strip(), wf2)
-                wf3 = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2)
-                future_atmosphere = _future_comfyui_generate(external_url.strip(), wf3)
+                url_str  = external_url.strip()
+                # upload ref images for img2img if provided
+                ref_main = ref_mat = ref_atmo = None
+                for img_slot, attr in [(upload_main, "ref_main"),
+                                       (upload_material, "ref_mat"),
+                                       (upload_atmosphere, "ref_atmo")]:
+                    if img_slot is not None and HAS_REQUESTS:
+                        try:
+                            fname = _upload_ref_to_comfyui(url_str, img_slot)
+                            if attr == "ref_main":    ref_main = fname
+                            elif attr == "ref_mat":   ref_mat  = fname
+                            else:                     ref_atmo = fname
+                        except Exception:
+                            pass
+                wf1 = _future_patch_workflow(workflow, main_prompt, neg, w, h, int(steps), float(cfg), seed_val, ref_main)
+                future_main = _future_comfyui_generate(url_str, wf1)
+                wf2 = _future_patch_workflow(workflow, material_prompt, neg, w, h, int(steps), float(cfg), seed_val + 1, ref_mat)
+                future_material = _future_comfyui_generate(url_str, wf2)
+                wf3 = _future_patch_workflow(workflow, atmosphere_prompt, neg, w, h, int(steps), float(cfg), seed_val + 2, ref_atmo)
+                future_atmosphere = _future_comfyui_generate(url_str, wf3)
             else:
                 warning = "⚠️ comfyui_workflow.json not found — place workflow file in app directory"
         except Exception as e:
