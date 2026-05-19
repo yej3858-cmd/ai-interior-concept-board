@@ -860,10 +860,11 @@ def generate_concept(
         gp = llm_call(
             "You are an interior design director. Output JSON only.\n"
             f"Context: {ctx}\n"
+            f"IMPORTANT: All 3 image prompts must share the SAME visual style, color palette, and material vocabulary. Do NOT introduce new colors or styles not implied by the context.\n"
             "JSON: {\"statement\":\"3-4 sentence English concept statement, poetic and specific (use **bold** for key terms)\","
-            f"\"main\":\"{space} interior — main view, cinematic architectural photography, one sentence\","
-            f"\"material\":\"{space} — material and detail close-up, one sentence\","
-            f"\"atmosphere\":\"{space} — lighting and atmosphere, one sentence\"}}",
+            f"\"main\":\"{space} interior — main view, cinematic architectural photography, one sentence, consistent style\","
+            f"\"material\":\"{space} — material and detail close-up, same color palette as main, one sentence\","
+            f"\"atmosphere\":\"{space} — lighting and atmosphere, same mood and palette as main, one sentence\"}}",
             want_json=True)
         j = _safe_json(gp)
         if j.get("statement"): ko_stmt = j["statement"]
