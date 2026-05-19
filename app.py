@@ -1542,4 +1542,4 @@ body { background: #F7F2E8 !important; }
 </style>"""
 
 if __name__ == "__main__":
-    demo.launch(head=FORCE_CSS, server_name="127.0.0.1", server_port=7861)
+    demo.launch(head=FORCE_CSS, server_name="0.0.0.0", server_port=7861, share=True)
