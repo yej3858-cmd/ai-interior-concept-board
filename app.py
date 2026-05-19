@@ -318,8 +318,9 @@ def extract_custom_descriptors(extra: str) -> tuple:
     return translated, descriptors
 
 
-WORKFLOW_PATH = Path("comfyui_workflow.json")
-HISTORY_FILE  = Path("history.json")
+WORKFLOW_PATH   = Path("comfyui_workflow.json")
+HISTORY_FILE    = Path("history.json")
+FAVORITES_FILE  = Path("favorites.json")
 
 
 def _future_load_workflow():
@@ -915,7 +916,10 @@ def generate_concept(
     n_uploads = sum(1 for x in [upload_main, upload_material, upload_atmosphere] if x is not None)
     upload_note = f" · {n_uploads} image{'s' if n_uploads>1 else ''} used" if n_uploads else ""
     status_md = f"✓ {space} · {mood}{upload_note} — Concept board generated"
-    return main_prompt, material_prompt, atmosphere_prompt, tags, ko_stmt, board, status_md
+    img_out_main = future_main if future_main is not None else upload_main
+    img_out_mat  = future_material if future_material is not None else upload_material
+    img_out_atmo = future_atmosphere if future_atmosphere is not None else upload_atmosphere
+    return main_prompt, material_prompt, atmosphere_prompt, tags, ko_stmt, board, status_md, img_out_main, img_out_mat, img_out_atmo
 
 
 def reset_inputs():
@@ -1116,6 +1120,39 @@ def load_history_entry(history, key):
 
 def history_choices(history):
     return gr.update(choices=[e["key"] for e in history], value=None)
+
+
+def load_favorites_from_file():
+    if FAVORITES_FILE.exists():
+        try:
+            with open(FAVORITES_FILE, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+
+def pin_board(favs, board_html, space, mood):
+    if not board_html or "Design Intent" not in board_html:
+        gr.Warning("Generate a concept board first.")
+        return favs, gr.update()
+    key = f"⭐ {space} · {mood} — {time.strftime('%m/%d %H:%M')}"
+    entry = {"key": key, "board": board_html}
+    updated = ([entry] + favs)[:20]
+    try:
+        with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
+            json.dump(updated, f, ensure_ascii=False)
+    except Exception:
+        pass
+    gr.Info(f"Pinned: {key}")
+    return updated, gr.update(choices=[e["key"] for e in updated], value=None)
+
+
+def load_favorite_entry(favs, key):
+    for e in favs:
+        if e["key"] == key:
+            return e["board"]
+    return gr.update()
 
 
 CSS = """
@@ -1446,6 +1483,13 @@ with gr.Blocks(
                                       choices=[e["key"] for e in _init_history],
                                       interactive=True)
 
+            gr.HTML(_section_header("08 · Favorites"))
+            _init_favs = load_favorites_from_file()
+            favorites_state = gr.State(_init_favs)
+            favorites_dd = gr.Dropdown(label="Pinned Boards",
+                                        choices=[e["key"] for e in _init_favs],
+                                        interactive=True)
+
         # ── RIGHT MAIN PANEL ─────────────────────────────────────
         with gr.Column(scale=2, elem_classes=["right-panel"]):
 
@@ -1479,6 +1523,7 @@ with gr.Blocks(
                     with gr.Row():
                         export_btn  = gr.Button("⬇  Export as HTML + PNG", variant="secondary")
                         pdf_btn     = gr.Button("⬇  Export as PDF", variant="secondary")
+                        pin_btn     = gr.Button("⭐ Pin", variant="secondary", min_width=80)
                         export_file = gr.File(label="Download", visible=False, scale=2)
 
                 with gr.TabItem("📝  Prompts", id=1):
@@ -1490,6 +1535,13 @@ with gr.Blocks(
                     tags_out   = gr.Textbox(label="Hashtags", lines=3)
                     korean_out = gr.Markdown(value="*Concept statement will appear after Generate.*")
 
+                with gr.TabItem("🖼️  Images", id=3):
+                    gr.HTML('<p style="font-size:12px;color:#7A7268;margin:0 0 12px;">Generated images — right-click or use buttons to save.</p>')
+                    with gr.Row():
+                        img_main_out = gr.Image(label="Main View", type="pil", interactive=False)
+                        img_mat_out  = gr.Image(label="Material Detail", type="pil", interactive=False)
+                        img_atmo_out = gr.Image(label="Atmosphere", type="pil", interactive=False)
+
     inputs = [
         space_in, activity_in, material_in, lighting_in,
         mood_in, spatial_in, extra_in,
@@ -1498,7 +1550,8 @@ with gr.Blocks(
         steps_in, cfg_in, imgsize_in, seed_in, denoise_in,
     ]
     outputs = [main_prompt_out, material_prompt_out, atmo_prompt_out,
-               tags_out, korean_out, board_out, status_out]
+               tags_out, korean_out, board_out, status_out,
+               img_main_out, img_mat_out, img_atmo_out]
     hist_inputs = [history_state, space_in, mood_in, board_out,
                    main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, concept_state]
 
@@ -1567,6 +1620,14 @@ with gr.Blocks(
     # Export
     export_btn.click(fn=export_board_html, inputs=[board_out], outputs=[export_file])
     pdf_btn.click(fn=export_board_pdf, inputs=[board_out], outputs=[export_file])
+
+    # Pin / Favorites
+    pin_btn.click(fn=pin_board,
+                  inputs=[favorites_state, board_out, space_in, mood_in],
+                  outputs=[favorites_state, favorites_dd])
+    favorites_dd.change(fn=load_favorite_entry,
+                        inputs=[favorites_state, favorites_dd],
+                        outputs=[board_out])
 
 
 FORCE_CSS = """
