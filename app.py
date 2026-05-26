@@ -550,13 +550,18 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
 
 
 _MATERIAL_PHOTO = {
-    "Wood":     _ai_photo_url("oak wood grain texture surface close-up, warm brown, macro", 400, 240, seed=11),
-    "Concrete": _ai_photo_url("polished concrete surface texture, grey minimalist, macro", 400, 240, seed=22),
-    "Glass":    _ai_photo_url("frosted glass panel texture, translucent light, architectural, macro", 400, 240, seed=33),
-    "Fabric":   _ai_photo_url("linen fabric woven texture close-up, natural beige textile, macro", 400, 240, seed=44),
-    "Metal":    _ai_photo_url("brushed stainless steel surface texture, metallic sheen, macro", 400, 240, seed=55),
-    "Stone":    _ai_photo_url("white marble stone texture, grey veining, interior material, macro", 400, 240, seed=66),
-    "Brick":    _ai_photo_url("exposed red brick wall texture, rough mortar, interior, macro", 400, 240, seed=77),
+    "Wood":          _ai_photo_url("natural oak hardwood floor planks close-up, wood grain texture, warm brown tones, no carpet, macro photography", 400, 240, seed=11),
+    "Concrete":      _ai_photo_url("polished grey concrete wall surface texture, minimalist, architectural material, macro", 400, 240, seed=22),
+    "Glass":         _ai_photo_url("clear architectural glass panel, structural glazing, transparent surface, macro", 400, 240, seed=33),
+    "Fabric":        _ai_photo_url("natural linen textile weave close-up, beige fabric texture, upholstery material, macro", 400, 240, seed=44),
+    "Metal":         _ai_photo_url("brushed stainless steel sheet surface, metallic sheen, industrial material, macro", 400, 240, seed=55),
+    "Stone":         _ai_photo_url("white carrara marble slab surface, grey veining, polished stone interior, macro", 400, 240, seed=66),
+    "Brick":         _ai_photo_url("exposed red clay brick wall, rough mortar joints, interior texture, macro", 400, 240, seed=77),
+    "Linen":         _ai_photo_url("natural linen cloth texture, woven fiber close-up, neutral beige, macro", 400, 240, seed=88),
+    "Paper":         _ai_photo_url("washi paper texture, handmade paper surface, translucent natural fiber, macro", 400, 240, seed=99),
+    "Raw Concrete":  _ai_photo_url("raw unfinished concrete surface texture, grey formwork marks, brutalist material, macro", 400, 240, seed=101),
+    "Clay":          _ai_photo_url("natural clay plaster wall texture, earthy terracotta surface, organic material, macro", 400, 240, seed=102),
+    "White Plaster": _ai_photo_url("smooth white plaster wall surface, clean finish, minimalist interior material, macro", 400, 240, seed=103),
 }
 _SPACE_PHOTO = {
     "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
@@ -722,6 +727,19 @@ def build_html_board(
                        for m in (materials or ["Wood", "Concrete", "Stone"])[:5]]
     palette_html = _palette_strip_html(palette_hex)
     mat_blocks = "".join(_material_block(m) for m in (materials or ["Wood"]))
+    # ref image strip (only uploaded, not generated)
+    ref_imgs = [(lbl, img) for lbl, img in [("Main View", uploaded_main), ("Material", uploaded_material), ("Atmosphere", uploaded_atmosphere)] if img is not None]
+    if ref_imgs:
+        ref_items = "".join(
+            f'<div style="text-align:center;">'
+            f'<img src="data:image/jpeg;base64,{pil_to_b64(img)}" style="width:140px;height:100px;object-fit:cover;border-radius:6px;display:block;margin-bottom:4px;">'
+            f'<span style="font-size:9px;color:#9A9288;letter-spacing:1px;text-transform:uppercase;">{lbl}</span></div>'
+            for lbl, img in ref_imgs)
+        ref_section = (f'<div style="padding:20px 40px;background:#F5F0E8;border-bottom:1px solid #EDE6DA;">'
+                       f'<p style="font-size:8px;letter-spacing:4px;text-transform:uppercase;color:#B0A898;margin:0 0 12px;font-weight:700;">Reference Images</p>'
+                       f'<div style="display:flex;gap:16px;">{ref_items}</div></div>')
+    else:
+        ref_section = ""
     act_chips  = "".join(_chip(a, "#EDE8DF", "#4A3C30") for a in activities) or _chip("—", "#F5F2EE", "#AAA8A4")
     lit_chips  = "".join(_chip(l, "#EDE8DF", "#3C3830") for l in lighting)   or _chip("—", "#F5F2EE", "#AAA8A4")
     spa_chips  = "".join(_chip(s, "#E6EDE8", "#303C38") for s in spatial)    or _chip("—", "#F5F2EE", "#AAA8A4")
@@ -750,7 +768,7 @@ def build_html_board(
     </p>
     <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:12px;">
       <h1 style="font-size:42px;font-weight:300;letter-spacing:-1px;margin:0;
-                 color:#1E1A14;font-family:'Georgia','Times New Roman',serif;line-height:1.1;">{sp['ko']}</h1>
+                 color:#1E1A14;font-family:'Georgia','Times New Roman',serif;line-height:1.1;">{space or 'Interior Space'}</h1>
       <span style="font-size:16px;color:#8A8278;font-weight:300;letter-spacing:0.5px;font-family:'Georgia',serif;font-style:italic;">{mood_label}</span>
     </div>
     <p style="font-size:11px;color:#A09888;margin:0 0 20px;line-height:1.6;letter-spacing:1.5px;text-transform:uppercase;">
@@ -765,6 +783,8 @@ def build_html_board(
     <div style="overflow:hidden;position:relative;">{mid_tile}</div>
     <div style="overflow:hidden;position:relative;">{bot_tile}</div>
   </div>
+
+  {ref_section}
 
   <!-- DESIGN INTENT -->
   <div style="padding:36px 40px;background:linear-gradient(160deg,#FFFDF7 60%,#F7F0E4);border-bottom:1px solid #EDE6DA;">
@@ -1175,6 +1195,10 @@ def pin_board(favs, board_html, space, mood):
         gr.Warning("Generate a concept board first.")
         return favs, gr.update()
     key = f"⭐ {space} · {mood} — {time.strftime('%m/%d %H:%M')}"
+    # prevent duplicate pins of same board
+    if any(e["board"] == board_html for e in favs):
+        gr.Info("Already pinned.")
+        return favs, gr.update()
     entry = {"key": key, "board": board_html}
     updated = ([entry] + favs)[:20]
     try:
@@ -1183,6 +1207,19 @@ def pin_board(favs, board_html, space, mood):
     except Exception:
         pass
     gr.Info(f"Pinned: {key}")
+    return updated, gr.update(choices=[e["key"] for e in updated], value=None)
+
+
+def unpin_board(favs, key):
+    if not key:
+        return favs, gr.update()
+    updated = [e for e in favs if e["key"] != key]
+    try:
+        with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
+            json.dump(updated, f, ensure_ascii=False)
+    except Exception:
+        pass
+    gr.Info("Unpinned.")
     return updated, gr.update(choices=[e["key"] for e in updated], value=None)
 
 
@@ -1527,6 +1564,7 @@ with gr.Blocks(
             favorites_dd = gr.Dropdown(label="Pinned Boards",
                                         choices=[e["key"] for e in _init_favs],
                                         interactive=True)
+            unpin_btn = gr.Button("🗑 Unpin Selected", variant="secondary", size="sm")
 
         # ── RIGHT MAIN PANEL ─────────────────────────────────────
         with gr.Column(scale=2, elem_classes=["right-panel"]):
@@ -1674,6 +1712,9 @@ with gr.Blocks(
     pin_btn.click(fn=pin_board,
                   inputs=[favorites_state, board_out, space_in, mood_in],
                   outputs=[favorites_state, favorites_dd])
+    unpin_btn.click(fn=unpin_board,
+                    inputs=[favorites_state, favorites_dd],
+                    outputs=[favorites_state, favorites_dd])
     favorites_dd.change(fn=load_favorite_entry,
                         inputs=[favorites_state, favorites_dd],
                         outputs=[board_out])
@@ -1716,4 +1757,5 @@ body { background: #F7F2E8 !important; }
 </style>"""
 
 if __name__ == "__main__":
+    demo.queue()
     demo.launch(head=FORCE_CSS, server_name="0.0.0.0", server_port=7861, share=True)
