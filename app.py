@@ -319,6 +319,7 @@ def extract_custom_descriptors(extra: str) -> tuple:
 
 
 WORKFLOW_PATH   = Path("comfyui_workflow.json")
+UPSCALE_PATH    = Path("Upscale.json")
 HISTORY_FILE    = Path("history.json")
 FAVORITES_FILE  = Path("favorites.json")
 
@@ -1212,11 +1213,29 @@ def toggle_pin(favs, board_html, space, mood):
     return updated, gr.update(choices=[e["key"] for e in updated], value=None), gr.update(value=btn_label)
 
 
-def upscale_image(img):
+def upscale_with_comfyui(img, external_url):
     if img is None:
+        gr.Warning("No image to upscale.")
         return None
-    w, h = img.size
-    return img.resize((w * 2, h * 2), PILImage.LANCZOS)
+    if not external_url or not HAS_REQUESTS:
+        gr.Warning("ComfyUI not connected.")
+        return None
+    if not UPSCALE_PATH.exists():
+        gr.Warning("Upscale.json not found in project folder.")
+        return None
+    try:
+        with open(UPSCALE_PATH, encoding="utf-8") as f:
+            wf = json.load(f)
+        fname = _upload_ref_to_comfyui(external_url.strip(), img)
+        # patch LoadImage node with uploaded filename
+        for node in wf.values():
+            if node.get("class_type") == "LoadImage":
+                node["inputs"]["image"] = fname
+        gr.Info("Upscaling via ComfyUI (this may take a while)…")
+        return _future_comfyui_generate(external_url.strip(), wf, timeout=600)
+    except Exception as e:
+        gr.Warning(f"Upscale failed: {str(e)[:80]}")
+        return None
 
 
 def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external, denoise, size_str):
@@ -1750,9 +1769,9 @@ with gr.Blocks(
 
     # Hi-res re-generate buttons
     _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
-    up_main_btn.click(fn=regen_image_hires, inputs=[main_prompt_out, *_regen_common, up_main_size], outputs=[img_main_out])
-    up_mat_btn.click(fn=regen_image_hires,  inputs=[material_prompt_out, *_regen_common, up_mat_size],  outputs=[img_mat_out])
-    up_atmo_btn.click(fn=regen_image_hires, inputs=[atmo_prompt_out, *_regen_common, up_atmo_size], outputs=[img_atmo_out])
+    up_main_btn.click(fn=upscale_with_comfyui, inputs=[img_main_out, external_url_in], outputs=[img_main_out])
+    up_mat_btn.click(fn=upscale_with_comfyui,  inputs=[img_mat_out,  external_url_in], outputs=[img_mat_out])
+    up_atmo_btn.click(fn=upscale_with_comfyui, inputs=[img_atmo_out, external_url_in], outputs=[img_atmo_out])
 
 
 FORCE_CSS = """
