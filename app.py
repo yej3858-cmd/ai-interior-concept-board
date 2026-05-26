@@ -1227,10 +1227,16 @@ def upscale_with_comfyui(img, external_url):
         with open(UPSCALE_PATH, encoding="utf-8") as f:
             wf = json.load(f)
         fname = _upload_ref_to_comfyui(external_url.strip(), img)
-        # patch LoadImage node with uploaded filename
         for node in wf.values():
-            if node.get("class_type") == "LoadImage":
-                node["inputs"]["image"] = fname
+            ct = node.get("class_type", "")
+            inp = node.get("inputs", {})
+            if ct == "LoadImage":
+                inp["image"] = fname
+            elif ct == "UltimateSDUpscale":
+                inp["steps"] = 2
+                inp["tile_width"] = 512
+                inp["tile_height"] = 512
+                inp["upscale_by"] = 2
         gr.Info("Upscaling via ComfyUI (this may take a while)…")
         return _future_comfyui_generate(external_url.strip(), wf, timeout=600)
     except Exception as e:
