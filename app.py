@@ -1220,7 +1220,11 @@ def upscale_image(img):
 
 
 def load_favorite_entry(favs, key):
-    for e in favs:
+    if not key:
+        return gr.update()
+    # try state first, fallback to file
+    all_favs = favs or load_favorites_from_file()
+    for e in all_favs:
         if e["key"] == key:
             return e["board"]
     return gr.update()
