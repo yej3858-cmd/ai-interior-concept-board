@@ -1229,7 +1229,8 @@ def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external,
         return None
     try:
         w, h = parse_image_size(size_str)
-        seed_val = int(seed) if int(seed) >= 0 else random.randint(0, 2**31 - 1)
+        # keep same seed so only size changes, not composition
+        seed_val = int(seed) if int(seed) >= 0 else 42
         wf = _future_patch_workflow(workflow, prompt, neg or "", w, h, int(steps), float(cfg), seed_val)
         return _future_comfyui_generate(external_url.strip(), wf)
     except Exception as e:
