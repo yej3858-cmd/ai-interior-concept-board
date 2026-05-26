@@ -1219,6 +1219,24 @@ def upscale_image(img):
     return img.resize((w * 2, h * 2), PILImage.LANCZOS)
 
 
+def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external, denoise, size_str):
+    if not prompt or not use_external or not external_url:
+        gr.Warning("ComfyUI not connected or no prompt.")
+        return None
+    workflow = _future_load_workflow()
+    if not workflow:
+        gr.Warning("comfyui_workflow.json not found.")
+        return None
+    try:
+        w, h = parse_image_size(size_str)
+        seed_val = int(seed) if int(seed) >= 0 else random.randint(0, 2**31 - 1)
+        wf = _future_patch_workflow(workflow, prompt, neg or "", w, h, int(steps), float(cfg), seed_val)
+        return _future_comfyui_generate(external_url.strip(), wf)
+    except Exception as e:
+        gr.Warning(f"Regen failed: {str(e)[:80]}")
+        return None
+
+
 def load_favorite_entry(favs, key):
     if not key:
         return gr.update()
@@ -1612,17 +1630,21 @@ with gr.Blocks(
                     korean_out = gr.Markdown(value="*Concept statement will appear after Generate.*")
 
                 with gr.TabItem("🖼️  Images", id=3):
-                    gr.HTML('<p style="font-size:12px;color:#7A7268;margin:0 0 12px;">Generated images — right-click or use buttons to save.</p>')
+                    gr.HTML('<p style="font-size:12px;color:#7A7268;margin:0 0 12px;">Generated images — select size and re-generate for higher quality.</p>')
+                    hires_sizes = ["512x512", "768x768", "1024x1024", "1024x768", "768x1024"]
                     with gr.Row():
                         with gr.Column():
                             img_main_out  = gr.Image(label="Main View", type="pil", interactive=False)
-                            up_main_btn   = gr.Button("⬆ 2× Upscale", size="sm", variant="secondary")
+                            up_main_size  = gr.Dropdown(choices=hires_sizes, value="1024x1024", label="Size", scale=2)
+                            up_main_btn   = gr.Button("⬆ Re-generate Hi-Res", size="sm", variant="secondary")
                         with gr.Column():
                             img_mat_out   = gr.Image(label="Material Detail", type="pil", interactive=False)
-                            up_mat_btn    = gr.Button("⬆ 2× Upscale", size="sm", variant="secondary")
+                            up_mat_size   = gr.Dropdown(choices=hires_sizes, value="1024x1024", label="Size", scale=2)
+                            up_mat_btn    = gr.Button("⬆ Re-generate Hi-Res", size="sm", variant="secondary")
                         with gr.Column():
                             img_atmo_out  = gr.Image(label="Atmosphere", type="pil", interactive=False)
-                            up_atmo_btn   = gr.Button("⬆ 2× Upscale", size="sm", variant="secondary")
+                            up_atmo_size  = gr.Dropdown(choices=hires_sizes, value="1024x1024", label="Size", scale=2)
+                            up_atmo_btn   = gr.Button("⬆ Re-generate Hi-Res", size="sm", variant="secondary")
                     eval_btn = gr.Button("🔍 Evaluate Images (Gemini)", variant="secondary", size="sm")
                     eval_out = gr.Markdown(value="")
 
@@ -1725,10 +1747,11 @@ with gr.Blocks(
                         inputs=[favorites_state, favorites_dd],
                         outputs=[board_out])
 
-    # Upscale buttons
-    up_main_btn.click(fn=upscale_image, inputs=[img_main_out], outputs=[img_main_out])
-    up_mat_btn.click(fn=upscale_image,  inputs=[img_mat_out],  outputs=[img_mat_out])
-    up_atmo_btn.click(fn=upscale_image, inputs=[img_atmo_out], outputs=[img_atmo_out])
+    # Hi-res re-generate buttons
+    _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
+    up_main_btn.click(fn=regen_image_hires, inputs=[main_prompt_out, *_regen_common, up_main_size], outputs=[img_main_out])
+    up_mat_btn.click(fn=regen_image_hires,  inputs=[material_prompt_out, *_regen_common, up_mat_size],  outputs=[img_mat_out])
+    up_atmo_btn.click(fn=regen_image_hires, inputs=[atmo_prompt_out, *_regen_common, up_atmo_size], outputs=[img_atmo_out])
 
 
 FORCE_CSS = """
