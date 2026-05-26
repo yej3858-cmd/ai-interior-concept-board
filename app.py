@@ -1190,37 +1190,33 @@ def load_favorites_from_file():
     return []
 
 
-def pin_board(favs, board_html, space, mood):
+def toggle_pin(favs, board_html, space, mood):
     if not board_html or "Design Intent" not in board_html:
         gr.Warning("Generate a concept board first.")
-        return favs, gr.update()
-    key = f"⭐ {space} · {mood} — {time.strftime('%m/%d %H:%M')}"
-    # prevent duplicate pins of same board
-    if any(e["board"] == board_html for e in favs):
-        gr.Info("Already pinned.")
-        return favs, gr.update()
-    entry = {"key": key, "board": board_html}
-    updated = ([entry] + favs)[:20]
+        return favs, gr.update(), gr.update()
+    is_pinned = any(e["board"] == board_html for e in favs)
+    if is_pinned:
+        updated = [e for e in favs if e["board"] != board_html]
+        gr.Info("Unpinned.")
+        btn_label = "⭐ Pin"
+    else:
+        key = f"⭐ {space} · {mood} — {time.strftime('%m/%d %H:%M')}"
+        updated = ([{"key": key, "board": board_html}] + favs)[:20]
+        gr.Info(f"Pinned.")
+        btn_label = "📌 Pinned"
     try:
         with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
             json.dump(updated, f, ensure_ascii=False)
     except Exception:
         pass
-    gr.Info(f"Pinned: {key}")
-    return updated, gr.update(choices=[e["key"] for e in updated], value=None)
+    return updated, gr.update(choices=[e["key"] for e in updated], value=None), gr.update(value=btn_label)
 
 
-def unpin_board(favs, key):
-    if not key:
-        return favs, gr.update()
-    updated = [e for e in favs if e["key"] != key]
-    try:
-        with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
-            json.dump(updated, f, ensure_ascii=False)
-    except Exception:
-        pass
-    gr.Info("Unpinned.")
-    return updated, gr.update(choices=[e["key"] for e in updated], value=None)
+def upscale_image(img):
+    if img is None:
+        return None
+    w, h = img.size
+    return img.resize((w * 2, h * 2), PILImage.LANCZOS)
 
 
 def load_favorite_entry(favs, key):
@@ -1533,7 +1529,7 @@ with gr.Blocks(
                     steps_in   = gr.Slider(1, 100, step=1,   value=20,  label="Steps")
                     cfg_in     = gr.Slider(1, 20,  step=0.5, value=1.0, label="CFG")
                 with gr.Row():
-                    imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="768x768", label="Size")
+                    imgsize_in = gr.Dropdown(choices=SIZE_LIST, value="512x512", label="Size")
                     seed_in    = gr.Number(value=-1, label="Seed", precision=0)
                 denoise_in = gr.Slider(0.1, 1.0, step=0.05, value=0.65, label="Denoise (img2img strength)")
 
@@ -1564,7 +1560,6 @@ with gr.Blocks(
             favorites_dd = gr.Dropdown(label="Pinned Boards",
                                         choices=[e["key"] for e in _init_favs],
                                         interactive=True)
-            unpin_btn = gr.Button("🗑 Unpin Selected", variant="secondary", size="sm")
 
         # ── RIGHT MAIN PANEL ─────────────────────────────────────
         with gr.Column(scale=2, elem_classes=["right-panel"]):
@@ -1601,6 +1596,7 @@ with gr.Blocks(
                         pdf_btn     = gr.Button("⬇  Export as PDF", variant="secondary")
                         pin_btn     = gr.Button("⭐ Pin", variant="secondary", min_width=80)
                         export_file = gr.File(label="Download", visible=False, scale=2)
+                    pin_state = gr.State(False)
 
                 with gr.TabItem("📝  Prompts", id=1):
                     main_prompt_out     = gr.Textbox(label="Slot 1 — Main Concept",      lines=3)
@@ -1614,9 +1610,15 @@ with gr.Blocks(
                 with gr.TabItem("🖼️  Images", id=3):
                     gr.HTML('<p style="font-size:12px;color:#7A7268;margin:0 0 12px;">Generated images — right-click or use buttons to save.</p>')
                     with gr.Row():
-                        img_main_out = gr.Image(label="Main View", type="pil", interactive=False)
-                        img_mat_out  = gr.Image(label="Material Detail", type="pil", interactive=False)
-                        img_atmo_out = gr.Image(label="Atmosphere", type="pil", interactive=False)
+                        with gr.Column():
+                            img_main_out  = gr.Image(label="Main View", type="pil", interactive=False)
+                            up_main_btn   = gr.Button("⬆ 2× Upscale", size="sm", variant="secondary")
+                        with gr.Column():
+                            img_mat_out   = gr.Image(label="Material Detail", type="pil", interactive=False)
+                            up_mat_btn    = gr.Button("⬆ 2× Upscale", size="sm", variant="secondary")
+                        with gr.Column():
+                            img_atmo_out  = gr.Image(label="Atmosphere", type="pil", interactive=False)
+                            up_atmo_btn   = gr.Button("⬆ 2× Upscale", size="sm", variant="secondary")
                     eval_btn = gr.Button("🔍 Evaluate Images (Gemini)", variant="secondary", size="sm")
                     eval_out = gr.Markdown(value="")
 
@@ -1637,6 +1639,8 @@ with gr.Blocks(
     def _btn_loading():  return gr.update(value="Generating…", interactive=False)
     def _btn_ready():    return gr.update(value="Generate Concept  ✶", interactive=True)
 
+    def _reset_pin_btn(): return gr.update(value="⭐ Pin")
+
     # Generate button
     (gen_btn.click(fn=_btn_loading, inputs=[], outputs=[gen_btn])
             .then(fn=generate_concept, inputs=inputs, outputs=outputs)
@@ -1644,6 +1648,7 @@ with gr.Blocks(
             .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
             .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
             .then(fn=history_choices, inputs=[history_state], outputs=[history_dd])
+            .then(fn=_reset_pin_btn, inputs=[], outputs=[pin_btn])
             .then(fn=_btn_ready, inputs=[], outputs=[gen_btn]))
 
     # Enter key
@@ -1708,16 +1713,18 @@ with gr.Blocks(
                    inputs=[img_main_out, img_mat_out, img_atmo_out, space_in, mood_in],
                    outputs=[eval_out])
 
-    # Pin / Favorites
-    pin_btn.click(fn=pin_board,
+    # Pin toggle
+    pin_btn.click(fn=toggle_pin,
                   inputs=[favorites_state, board_out, space_in, mood_in],
-                  outputs=[favorites_state, favorites_dd])
-    unpin_btn.click(fn=unpin_board,
-                    inputs=[favorites_state, favorites_dd],
-                    outputs=[favorites_state, favorites_dd])
+                  outputs=[favorites_state, favorites_dd, pin_btn])
     favorites_dd.change(fn=load_favorite_entry,
                         inputs=[favorites_state, favorites_dd],
                         outputs=[board_out])
+
+    # Upscale buttons
+    up_main_btn.click(fn=upscale_image, inputs=[img_main_out], outputs=[img_main_out])
+    up_mat_btn.click(fn=upscale_image,  inputs=[img_mat_out],  outputs=[img_mat_out])
+    up_atmo_btn.click(fn=upscale_image, inputs=[img_atmo_out], outputs=[img_atmo_out])
 
 
 FORCE_CSS = """
