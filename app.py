@@ -1497,13 +1497,6 @@ BOARD_PLACEHOLDER = """
 </div>
 """
 
-STYLE_PRESETS = [
-    {"label": "🪵 Japandi", "data": ("Living Room", ["Rest", "Reading"], ["Wood", "Linen", "Paper"], ["Natural Light", "Diffused"], "Minimal", ["Low Ceiling", "Intimate"], "japandi style, neutral palette, handcraft textures, zen simplicity")},
-    {"label": "🌾 Wabi-sabi", "data": ("Living Room", ["Rest", "Meditation"], ["Raw Concrete", "Clay", "Linen"], ["Diffused", "Candle-like"], "Wabi-sabi", ["Compact", "Enclosed"], "wabi-sabi, imperfect textures, aged wood, organic forms, muted earth tones")},
-    {"label": "🏗️ Brutalist", "data": ("Gallery", ["Exhibition", "Creative"], ["Concrete", "Metal", "Glass"], ["Dramatic", "Accent Lighting"], "Futuristic", ["High Ceiling", "Open"], "raw concrete, exposed structure, bold geometry, industrial materiality")},
-    {"label": "⬜ Minimalist", "data": ("Living Room", ["Rest", "Work"], ["White Plaster", "Glass", "Metal"], ["Natural Light", "Indirect"], "Minimal", ["Open", "High Ceiling"], "pure minimalism, white walls, hidden storage, uncluttered surfaces")},
-]
-
 PRESET_EXAMPLES = [
     {"label": "📚  Creative Library Lounge", "sub": "Wood · Fabric · Layered · Cozy",
      "data": ("Library", ["Reading", "Creative", "Social"], ["Wood", "Fabric", "Stone"],
@@ -1588,13 +1581,7 @@ with gr.Blocks(
                     seed_in    = gr.Number(value=-1, label="Seed", precision=0)
                 denoise_in = gr.Slider(0.1, 1.0, step=0.05, value=0.65, label="Denoise (img2img strength)")
 
-            gr.HTML(_section_header("05 · Style Presets"))
-            style_preset_btns = []
-            for sp in STYLE_PRESETS:
-                btn = gr.Button(sp["label"], elem_classes=["example-card"], size="sm")
-                style_preset_btns.append((btn, sp["data"]))
-
-            gr.HTML(_section_header("06 · Examples"))
+            gr.HTML(_section_header("05 · Examples"))
             preset_btns = []
             for preset in PRESET_EXAMPLES:
                 btn = gr.Button(f"{preset['label']}  {preset['sub']}",
@@ -1729,19 +1716,8 @@ with gr.Blocks(
     ai_btn.click(fn=ai_autofill, inputs=[extra_in],
                  outputs=[space_in, mood_in, material_in, lighting_in, activity_in, spatial_in])
 
-    # Style preset cards
-    preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
-    for btn, data in style_preset_btns:
-        (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
-            .then(fn=_btn_loading, inputs=[], outputs=[gen_btn])
-            .then(fn=generate_concept, inputs=inputs, outputs=outputs)
-            .then(fn=lambda: gr.update(selected=0), inputs=[], outputs=[results_tabs])
-            .then(fn=_sync_concept, inputs=[korean_out], outputs=[concept_state])
-            .then(fn=add_to_history, inputs=hist_inputs, outputs=[history_state])
-            .then(fn=history_choices, inputs=[history_state], outputs=[history_dd])
-            .then(fn=_btn_ready, inputs=[], outputs=[gen_btn]))
-
     # Preset cards
+    preset_outputs = [space_in, activity_in, material_in, lighting_in, mood_in, spatial_in, extra_in]
     for btn, data in preset_btns:
         (btn.click(fn=lambda d=data: d, inputs=[], outputs=preset_outputs)
             .then(fn=_btn_loading, inputs=[], outputs=[gen_btn])
