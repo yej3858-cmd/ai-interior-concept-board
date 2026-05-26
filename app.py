@@ -1227,16 +1227,23 @@ def upscale_with_comfyui(img, external_url):
         with open(UPSCALE_PATH, encoding="utf-8") as f:
             wf = json.load(f)
         fname = _upload_ref_to_comfyui(external_url.strip(), img)
-        for node in wf.values():
+        # find node IDs
+        upscale_model_id = save_id = img_upscale_id = None
+        for nid, node in wf.items():
             ct = node.get("class_type", "")
-            inp = node.get("inputs", {})
             if ct == "LoadImage":
-                inp["image"] = fname
-            elif ct == "UltimateSDUpscale":
-                inp["steps"] = 2
-                inp["tile_width"] = 512
-                inp["tile_height"] = 512
-                inp["upscale_by"] = 2
+                node["inputs"]["image"] = fname
+            elif ct == "ImageUpscaleWithModel":
+                img_upscale_id = nid
+            elif ct == "SaveImage":
+                save_id = nid
+        # bypass UltimateSDUpscale: wire SaveImage directly to ImageUpscaleWithModel
+        if save_id and img_upscale_id:
+            wf[save_id]["inputs"]["images"] = [img_upscale_id, 0]
+        # remove UltimateSDUpscale node to avoid errors
+        to_del = [nid for nid, node in wf.items() if node.get("class_type") == "UltimateSDUpscale"]
+        for nid in to_del:
+            del wf[nid]
         gr.Info("Upscaling via ComfyUI (this may take a while)…")
         return _future_comfyui_generate(external_url.strip(), wf, timeout=600)
     except Exception as e:
