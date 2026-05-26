@@ -1191,7 +1191,7 @@ def load_favorites_from_file():
     return []
 
 
-def toggle_pin(favs, board_html, space, mood):
+def toggle_pin(favs, board_html, space, mood, main_p, mat_p, atmo_p, tags, ko, img_main, img_mat, img_atmo):
     if not board_html or "Design Intent" not in board_html:
         gr.Warning("Generate a concept board first.")
         return favs, gr.update(), gr.update()
@@ -1202,8 +1202,16 @@ def toggle_pin(favs, board_html, space, mood):
         btn_label = "⭐ Pin"
     else:
         key = f"⭐ {space} · {mood} — {time.strftime('%m/%d %H:%M')}"
-        updated = ([{"key": key, "board": board_html}] + favs)[:20]
-        gr.Info(f"Pinned.")
+        entry = {
+            "key": key, "board": board_html,
+            "main": main_p, "mat": mat_p, "atmo": atmo_p,
+            "tags": tags, "ko": ko,
+            "img_main": pil_to_b64(img_main) if img_main else "",
+            "img_mat":  pil_to_b64(img_mat)  if img_mat  else "",
+            "img_atmo": pil_to_b64(img_atmo) if img_atmo else "",
+        }
+        updated = ([entry] + favs)[:20]
+        gr.Info("Pinned.")
         btn_label = "📌 Pinned"
     try:
         with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
@@ -1270,15 +1278,27 @@ def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external,
         return None
 
 
+def _b64_to_pil(b64str):
+    if not b64str or not HAS_PIL:
+        return None
+    try:
+        return PILImage.open(BytesIO(base64.b64decode(b64str))).convert("RGB")
+    except Exception:
+        return None
+
+
 def load_favorite_entry(favs, key):
     if not key:
-        return gr.update()
-    # try state first, fallback to file
+        return (gr.update(),) * 9
     all_favs = favs or load_favorites_from_file()
     for e in all_favs:
         if e["key"] == key:
-            return e["board"]
-    return gr.update()
+            return (e["board"], e.get("main",""), e.get("mat",""), e.get("atmo",""),
+                    e.get("tags",""), e.get("ko",""),
+                    _b64_to_pil(e.get("img_main","")),
+                    _b64_to_pil(e.get("img_mat","")),
+                    _b64_to_pil(e.get("img_atmo","")))
+    return (gr.update(),) * 9
 
 
 CSS = """
@@ -1750,11 +1770,15 @@ with gr.Blocks(
 
     # Pin toggle
     pin_btn.click(fn=toggle_pin,
-                  inputs=[favorites_state, board_out, space_in, mood_in],
+                  inputs=[favorites_state, board_out, space_in, mood_in,
+                          main_prompt_out, material_prompt_out, atmo_prompt_out,
+                          tags_out, korean_out, img_main_out, img_mat_out, img_atmo_out],
                   outputs=[favorites_state, favorites_dd, pin_btn])
     favorites_dd.change(fn=load_favorite_entry,
                         inputs=[favorites_state, favorites_dd],
-                        outputs=[board_out])
+                        outputs=[board_out, main_prompt_out, material_prompt_out,
+                                 atmo_prompt_out, tags_out, korean_out,
+                                 img_main_out, img_mat_out, img_atmo_out])
 
     # Hi-res re-generate buttons
     _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
