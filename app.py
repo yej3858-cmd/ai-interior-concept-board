@@ -1669,7 +1669,7 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
 
                 with gr.TabItem("🖼️  Images", id=3):
                     gr.HTML('<p style="font-size:12px;color:#7A7268;margin:0 0 12px;">Generated images — select size and re-generate for higher quality.</p>')
-                    hires_sizes = ["512x512", "768x768", "1024x1024", "1024x768", "768x1024"]
+                    hires_sizes = ["512x512", "768x512", "512x768", "768x768", "1024x512", "512x1024", "1024x768", "768x1024", "1024x1024", "1280x720", "720x1280", "1536x1024", "1024x1536"]
                     with gr.Row():
                         with gr.Column():
                             img_main_out  = gr.Image(label="Main View", type="pil", interactive=False)
