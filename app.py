@@ -1540,26 +1540,24 @@ MOOD_LIST     = list(MOOD_DATA.keys())
 SPATIAL_LIST  = list(SPATIAL_DATA.keys())
 SIZE_LIST     = ["768x768", "1024x768", "768x1024", "512x512", "1024x1024"]
 
-with gr.Blocks(
-    title="AI Interior Concept Board",
-    theme=gr.themes.Base(
-        primary_hue=gr.themes.colors.orange,
-        neutral_hue=gr.themes.colors.stone,
-        font=gr.themes.GoogleFont("Inter"),
-    ).set(
-        checkbox_label_background_fill="#EDE8DF",
-        checkbox_label_background_fill_hover="#E4EED8",
-        checkbox_label_background_fill_selected="#4E7040",
-        checkbox_label_text_color="#1E1A14",
-        checkbox_label_text_color_selected="#FFFFFF",
-        checkbox_label_border_color="#C8BCAC",
-        checkbox_label_border_color_hover="#7A9868",
-        checkbox_label_border_color_selected="#3C5C30",
-        body_text_color="#1E1A14",
-        body_text_color_subdued="#5A5248",
-    ),
-    css=CSS,
-) as demo:
+_theme = gr.themes.Base(
+    primary_hue=gr.themes.colors.orange,
+    neutral_hue=gr.themes.colors.stone,
+    font=gr.themes.GoogleFont("Inter"),
+).set(
+    checkbox_label_background_fill="#EDE8DF",
+    checkbox_label_background_fill_hover="#E4EED8",
+    checkbox_label_background_fill_selected="#4E7040",
+    checkbox_label_text_color="#1E1A14",
+    checkbox_label_text_color_selected="#FFFFFF",
+    checkbox_label_border_color="#C8BCAC",
+    checkbox_label_border_color_hover="#7A9868",
+    checkbox_label_border_color_selected="#3C5C30",
+    body_text_color="#1E1A14",
+    body_text_color_subdued="#5A5248",
+)
+
+with gr.Blocks(title="AI Interior Concept Board") as demo:
 
     gr.HTML(HEADER_HTML)
 
@@ -1825,4 +1823,5 @@ body { background: #F7F2E8 !important; }
 
 if __name__ == "__main__":
     demo.queue()
-    demo.launch(head=FORCE_CSS, server_name="0.0.0.0", server_port=7862, share=True)
+    demo.launch(head=FORCE_CSS, theme=_theme, css=CSS,
+                server_name="0.0.0.0", server_port=7862, share=True)
