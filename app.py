@@ -1825,4 +1825,4 @@ body { background: #F7F2E8 !important; }
 
 if __name__ == "__main__":
     demo.queue()
-    demo.launch(head=FORCE_CSS, server_name="0.0.0.0", server_port=7861, share=True)
+    demo.launch(head=FORCE_CSS, server_name="0.0.0.0", server_port=7862, share=True)
