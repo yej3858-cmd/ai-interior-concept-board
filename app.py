@@ -1160,8 +1160,13 @@ def evaluate_images(img_main, img_mat, img_atmo, space, mood):
         if not b64:
             continue
         prompt = (f"You are an interior design critic. Evaluate this {label.lower()} image for a {mood} {space}. "
-                  f"In 1-2 sentences: comment on how well it conveys the intended mood and materiality. "
-                  f"End with a score like [7/10]. Be concise and specific.")
+                  f"Format your response exactly like this:\n"
+                  f"Score: [X/10]\n"
+                  f"Assessment: [1 sentence on how well it conveys the mood and materiality]\n"
+                  f"Improvements:\n"
+                  f"1) [specific prompt or composition change to better achieve the design intent]\n"
+                  f"2) [another specific improvement suggestion]\n"
+                  f"Be concise and actionable. Focus on what would make the image more convincing as an interior concept.")
         url = ("https://generativelanguage.googleapis.com/v1beta/models/"
                f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
         body = json.dumps({"contents": [{"parts": [
@@ -1778,11 +1783,11 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
                                  atmo_prompt_out, tags_out, korean_out,
                                  img_main_out, img_mat_out, img_atmo_out])
 
-    # Hi-res re-generate buttons
+    # Hi-res re-generate buttons — pass size dropdown to regen_image_hires
     _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
-    up_main_btn.click(fn=upscale_with_comfyui, inputs=[img_main_out, external_url_in], outputs=[img_main_out])
-    up_mat_btn.click(fn=upscale_with_comfyui,  inputs=[img_mat_out,  external_url_in], outputs=[img_mat_out])
-    up_atmo_btn.click(fn=upscale_with_comfyui, inputs=[img_atmo_out, external_url_in], outputs=[img_atmo_out])
+    up_main_btn.click(fn=regen_image_hires, inputs=[main_prompt_out] + _regen_common + [up_main_size], outputs=[img_main_out])
+    up_mat_btn.click(fn=regen_image_hires,  inputs=[material_prompt_out] + _regen_common + [up_mat_size],  outputs=[img_mat_out])
+    up_atmo_btn.click(fn=regen_image_hires, inputs=[atmo_prompt_out] + _regen_common + [up_atmo_size], outputs=[img_atmo_out])
 
 
 FORCE_CSS = """
