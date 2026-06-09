@@ -1197,26 +1197,25 @@ def evaluate_images(img_main, img_mat, img_atmo, space, mood):
                   f"1) [specific prompt or composition change to better achieve the design intent]\n"
                   f"2) [another specific improvement suggestion]\n"
                   f"Be concise and actionable. Focus on what would make the image more convincing as an interior concept.")
-        url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-               f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
         body = json.dumps({"contents": [{"parts": [
             {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
             {"text": prompt}]}],
             "generationConfig": {"temperature": 0.4, "maxOutputTokens": 200,
                                  "thinkingConfig": {"thinkingBudget": 0}}
         }).encode("utf-8")
-        req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
         txt = None
-        for attempt in range(3):
+        for api_key in _GEMINI_KEYS:
+            url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+                   f"gemini-2.5-flash:generateContent?key={api_key}")
+            req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
             try:
                 with _urlreq.urlopen(req, timeout=25) as r:
                     data = json.loads(r.read().decode("utf-8"))
                 txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
                 break
             except Exception as e:
-                if "429" in str(e) and attempt < 2:
-                    time.sleep(8 * (attempt + 1))
-                    continue
+                if "429" in str(e):
+                    continue  # try next key
                 txt = f"evaluation failed ({e})"
                 break
         results.append(f"**{label}**: {txt}")
