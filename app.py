@@ -128,19 +128,16 @@ def ollama_call(prompt: str, want_json: bool = False, timeout: int = 8) -> str:
         return ""
 
 
-def gemini_call(prompt: str, want_json: bool = False, timeout: int = 30,
-                retries: int = 3) -> str:
-    if not GEMINI_KEY:
-        return ""
-    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-           f"gemini-2.5-flash:generateContent?key={GEMINI_KEY}")
-    cfg = {"temperature": 0.7, "maxOutputTokens": 800,
-           "thinkingConfig": {"thinkingBudget": 0}}
+def _gemini_call_model(model: str, prompt: str, want_json: bool, timeout: int, retries: int) -> str:
+    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+           f"{model}:generateContent?key={GEMINI_KEY}")
+    cfg = {"temperature": 0.7, "maxOutputTokens": 800}
+    if model.startswith("gemini-2"):
+        cfg["thinkingConfig"] = {"thinkingBudget": 0}
     if want_json:
         cfg["responseMimeType"] = "application/json"
     body = json.dumps({"contents": [{"parts": [{"text": prompt}]}],
                        "generationConfig": cfg}).encode("utf-8")
-    last_err = ""
     for attempt in range(retries + 1):
         req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
         try:
@@ -149,17 +146,30 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 30,
             parts = data["candidates"][0]["content"]["parts"]
             return next((p["text"].strip() for p in parts if "text" in p), "")
         except Exception as e:
-            last_err = str(e)
-            is_503 = "503" in last_err
-            is_429 = "429" in last_err
-            transient = is_503 or is_429 or "timed out" in last_err.lower()
-            if attempt < retries and transient:
-                wait = 10 if is_429 else 4 * (attempt + 1)
-                print(f"[Gemini] {last_err} — retry {attempt+1}/{retries} (wait {wait}s)")
+            err = str(e)
+            is_429 = "429" in err
+            transient = "503" in err or is_429 or "timed out" in err.lower()
+            if attempt < retries and transient and not is_429:
+                wait = 4 * (attempt + 1)
+                print(f"[Gemini/{model}] {err} — retry {attempt+1}/{retries} (wait {wait}s)")
                 time.sleep(wait)
                 continue
-            print(f"[Gemini] {last_err}")
-            return ""
+            print(f"[Gemini/{model}] {err}")
+            return "QUOTA_EXCEEDED" if is_429 else ""
+    return ""
+
+
+def gemini_call(prompt: str, want_json: bool = False, timeout: int = 30,
+                retries: int = 2) -> str:
+    if not GEMINI_KEY:
+        return ""
+    # try 2.5-flash first, fallback to 1.5-flash on quota exhaustion
+    for model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+        result = _gemini_call_model(model, prompt, want_json, timeout, retries)
+        if result == "QUOTA_EXCEEDED":
+            print(f"[Gemini] {model} quota exceeded — trying next model")
+            continue
+        return result
     return ""
 
 
