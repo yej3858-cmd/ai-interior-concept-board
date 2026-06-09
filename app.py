@@ -118,13 +118,18 @@ def ollama_call(prompt: str, want_json: bool = False, timeout: int = 8) -> str:
         with _urlreq.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read())["response"].strip()
     except Exception as e:
-        print(f"[Ollama] {e} — disabling for this session")
-        _OLLAMA_DEAD = True
+        err = str(e)
+        # only permanently disable on connection errors, not on 500 (model load issue)
+        if "Connection refused" in err or "404" in err or "Name or service not known" in err:
+            print(f"[Ollama] {err} — disabling for this session")
+            _OLLAMA_DEAD = True
+        else:
+            print(f"[Ollama] {err}")
         return ""
 
 
-def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25,
-                retries: int = 2) -> str:
+def gemini_call(prompt: str, want_json: bool = False, timeout: int = 30,
+                retries: int = 3) -> str:
     if not GEMINI_KEY:
         return ""
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
@@ -145,11 +150,13 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 25,
             return next((p["text"].strip() for p in parts if "text" in p), "")
         except Exception as e:
             last_err = str(e)
-            # retry only on transient errors (503/429/timeout)
-            transient = "503" in last_err or "429" in last_err or "timed out" in last_err.lower()
+            is_503 = "503" in last_err
+            is_429 = "429" in last_err
+            transient = is_503 or is_429 or "timed out" in last_err.lower()
             if attempt < retries and transient:
-                time.sleep(1.5 * (attempt + 1))
-                print(f"[Gemini] {last_err} — retry {attempt+1}/{retries}")
+                wait = 10 if is_429 else 4 * (attempt + 1)
+                print(f"[Gemini] {last_err} — retry {attempt+1}/{retries} (wait {wait}s)")
+                time.sleep(wait)
                 continue
             print(f"[Gemini] {last_err}")
             return ""
