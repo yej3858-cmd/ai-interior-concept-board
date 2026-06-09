@@ -1271,7 +1271,7 @@ def upscale_with_comfyui(img, external_url):
         return None
 
 
-def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external, denoise, size_str):
+def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external, denoise, size_str, current_img=None):
     if not prompt or not use_external or not external_url:
         gr.Warning("ComfyUI not connected or no prompt.")
         return None
@@ -1281,9 +1281,17 @@ def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external,
         return None
     try:
         w, h = parse_image_size(size_str)
-        # keep same seed so only size changes, not composition
         seed_val = int(seed) if int(seed) >= 0 else 42
-        wf = _future_patch_workflow(workflow, prompt, neg or "", w, h, int(steps), float(cfg), seed_val)
+        # use current image as reference with low denoise to preserve composition
+        ref_filename = None
+        if current_img is not None and HAS_REQUESTS:
+            try:
+                ref_filename = _upload_ref_to_comfyui(external_url.strip(), current_img)
+            except Exception:
+                ref_filename = None
+        wf = _future_patch_workflow(workflow, prompt, neg or "", w, h, int(steps), float(cfg), seed_val,
+                                    ref_image_filename=ref_filename,
+                                    denoise=0.2 if ref_filename else float(denoise))
         return _future_comfyui_generate(external_url.strip(), wf)
     except Exception as e:
         gr.Warning(f"Regen failed: {str(e)[:80]}")
@@ -1794,9 +1802,9 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
 
     # Hi-res re-generate buttons — pass size dropdown to regen_image_hires
     _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
-    up_main_btn.click(fn=regen_image_hires, inputs=[main_prompt_out] + _regen_common + [up_main_size], outputs=[img_main_out])
-    up_mat_btn.click(fn=regen_image_hires,  inputs=[material_prompt_out] + _regen_common + [up_mat_size],  outputs=[img_mat_out])
-    up_atmo_btn.click(fn=regen_image_hires, inputs=[atmo_prompt_out] + _regen_common + [up_atmo_size], outputs=[img_atmo_out])
+    up_main_btn.click(fn=regen_image_hires, inputs=[main_prompt_out] + _regen_common + [up_main_size, img_main_out], outputs=[img_main_out])
+    up_mat_btn.click(fn=regen_image_hires,  inputs=[material_prompt_out] + _regen_common + [up_mat_size, img_mat_out],  outputs=[img_mat_out])
+    up_atmo_btn.click(fn=regen_image_hires, inputs=[atmo_prompt_out] + _regen_common + [up_atmo_size, img_atmo_out], outputs=[img_atmo_out])
 
 
 FORCE_CSS = """
