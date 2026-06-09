@@ -157,7 +157,9 @@ def _gemini_call_model(model: str, api_key: str, prompt: str, want_json: bool, t
                 time.sleep(wait)
                 continue
             print(f"[Gemini/{model}] {err}")
-            return "QUOTA_EXCEEDED" if is_429 else ""
+            if is_429:
+                return "QUOTA_EXCEEDED"
+            return "MODEL_ERROR"
     return ""
 
 
@@ -167,11 +169,11 @@ def gemini_call(prompt: str, want_json: bool = False, timeout: int = 30,
         return ""
     # try each key × each model until one works
     for api_key in _GEMINI_KEYS:
-        for model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+        for model in ["gemini-2.5-flash", "gemini-2.0-flash"]:
             result = _gemini_call_model(model, api_key, prompt, want_json, timeout, retries)
-            if result != "QUOTA_EXCEEDED":
+            if result not in ("QUOTA_EXCEEDED", "MODEL_ERROR"):
                 return result
-            print(f"[Gemini] {model} key={api_key[:8]}... quota exceeded — trying next")
+            print(f"[Gemini] {model} key={api_key[:8]}... failed ({result}) — trying next")
     return ""
 
 
