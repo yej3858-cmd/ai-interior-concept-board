@@ -70,8 +70,10 @@ def _load_env():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 _load_env()
-GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
-print(f"[Gemini] API key loaded: {'yes' if GEMINI_KEY else 'NO — autofill/narrative disabled'}")
+GEMINI_KEY  = os.environ.get("GEMINI_API_KEY",   "").strip()
+GEMINI_KEY2 = os.environ.get("GEMINI_API_KEY_2", "").strip()
+_GEMINI_KEYS = [k for k in [GEMINI_KEY, GEMINI_KEY2] if k]
+print(f"[Gemini] API key loaded: {'yes' if GEMINI_KEY else 'NO — autofill/narrative disabled'} (keys: {len(_GEMINI_KEYS)})")
 
 
 def _safe_json(text: str) -> dict:
@@ -128,9 +130,9 @@ def ollama_call(prompt: str, want_json: bool = False, timeout: int = 8) -> str:
         return ""
 
 
-def _gemini_call_model(model: str, prompt: str, want_json: bool, timeout: int, retries: int) -> str:
+def _gemini_call_model(model: str, api_key: str, prompt: str, want_json: bool, timeout: int, retries: int) -> str:
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-           f"{model}:generateContent?key={GEMINI_KEY}")
+           f"{model}:generateContent?key={api_key}")
     cfg = {"temperature": 0.7, "maxOutputTokens": 800}
     if model.startswith("gemini-2"):
         cfg["thinkingConfig"] = {"thinkingBudget": 0}
@@ -161,21 +163,21 @@ def _gemini_call_model(model: str, prompt: str, want_json: bool, timeout: int, r
 
 def gemini_call(prompt: str, want_json: bool = False, timeout: int = 30,
                 retries: int = 2) -> str:
-    if not GEMINI_KEY:
+    if not _GEMINI_KEYS:
         return ""
-    # try 2.5-flash first, fallback to 1.5-flash on quota exhaustion
-    for model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
-        result = _gemini_call_model(model, prompt, want_json, timeout, retries)
-        if result == "QUOTA_EXCEEDED":
-            print(f"[Gemini] {model} quota exceeded — trying next model")
-            continue
-        return result
+    # try each key × each model until one works
+    for api_key in _GEMINI_KEYS:
+        for model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+            result = _gemini_call_model(model, api_key, prompt, want_json, timeout, retries)
+            if result != "QUOTA_EXCEEDED":
+                return result
+            print(f"[Gemini] {model} key={api_key[:8]}... quota exceeded — trying next")
     return ""
 
 
 def llm_call(prompt: str, want_json: bool = False) -> str:
     """Gemini first, fallback to Ollama."""
-    if GEMINI_KEY:
+    if _GEMINI_KEYS:
         result = gemini_call(prompt, want_json=want_json)
         if result:
             return result
