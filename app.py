@@ -1272,29 +1272,20 @@ def upscale_with_comfyui(img, external_url):
 
 
 def regen_image_hires(prompt, neg, steps, cfg, seed, external_url, use_external, denoise, size_str, current_img=None):
-    if not prompt or not use_external or not external_url:
-        gr.Warning("ComfyUI not connected or no prompt.")
-        return None
-    workflow = _future_load_workflow()
-    if not workflow:
-        gr.Warning("comfyui_workflow.json not found.")
+    if current_img is None:
+        gr.Warning("No image to upscale.")
         return None
     try:
         w, h = parse_image_size(size_str)
-        seed_val = int(seed) if int(seed) >= 0 else 42
-        # use current image as reference with low denoise to preserve composition
-        ref_filename = None
-        if current_img is not None and HAS_REQUESTS:
-            try:
-                ref_filename = _upload_ref_to_comfyui(external_url.strip(), current_img)
-            except Exception:
-                ref_filename = None
-        wf = _future_patch_workflow(workflow, prompt, neg or "", w, h, int(steps), float(cfg), seed_val,
-                                    ref_image_filename=ref_filename,
-                                    denoise=0.2 if ref_filename else float(denoise))
-        return _future_comfyui_generate(external_url.strip(), wf)
+        # try 4x-UltraSharp upscale first for quality improvement
+        upscaled = None
+        if use_external and external_url and UPSCALE_PATH.exists() and HAS_REQUESTS:
+            upscaled = upscale_with_comfyui(current_img, external_url)
+        base = upscaled if upscaled is not None else current_img
+        # resize to exact target size with high-quality LANCZOS
+        return base.resize((w, h), PILImage.LANCZOS)
     except Exception as e:
-        gr.Warning(f"Regen failed: {str(e)[:80]}")
+        gr.Warning(f"Upscale failed: {str(e)[:80]}")
         return None
 
 
