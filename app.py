@@ -1111,10 +1111,13 @@ def export_board_pdf(board_html):
     return gr.update(visible=True, value=tmp.name)
 
 
-def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko):
+def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko, img_main=None, img_mat=None, img_atmo=None):
     entry = {"key": f"{space} · {mood} — {time.strftime('%H:%M')}",
              "board": board, "main": main_p, "mat": mat_p,
-             "atmo": atmo_p, "tags": tags, "ko": ko}
+             "atmo": atmo_p, "tags": tags, "ko": ko,
+             "img_main": pil_to_b64(img_main) if img_main else "",
+             "img_mat":  pil_to_b64(img_mat)  if img_mat  else "",
+             "img_atmo": pil_to_b64(img_atmo) if img_atmo else ""}
     updated = ([entry] + history)[:10]
     try:
         with open(HISTORY_FILE, "w", encoding="utf-8") as f:
@@ -1135,10 +1138,14 @@ def load_history_from_file():
 
 
 def load_history_entry(history, key):
-    for e in history:
+    all_hist = history or load_history_from_file()
+    for e in all_hist:
         if e["key"] == key:
-            return e["board"], e["main"], e["mat"], e["atmo"], e["tags"], e["ko"]
-    return (gr.update(),) * 6
+            return (e["board"], e["main"], e["mat"], e["atmo"], e["tags"], e["ko"],
+                    _b64_to_pil(e.get("img_main", "")),
+                    _b64_to_pil(e.get("img_mat", "")),
+                    _b64_to_pil(e.get("img_atmo", "")))
+    return (gr.update(),) * 9
 
 
 def history_choices(history):
@@ -1702,7 +1709,8 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
                tags_out, korean_out, board_out, status_out,
                img_main_out, img_mat_out, img_atmo_out]
     hist_inputs = [history_state, space_in, mood_in, board_out,
-                   main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, concept_state]
+                   main_prompt_out, material_prompt_out, atmo_prompt_out, tags_out, concept_state,
+                   img_main_out, img_mat_out, img_atmo_out]
 
     def _sync_concept(txt): return txt
     def _btn_loading():  return gr.update(value="Generating…", interactive=False)
@@ -1760,7 +1768,8 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
     # History restore — also update concept_state so statement is recoverable
     history_dd.change(fn=load_history_entry, inputs=[history_state, history_dd],
                       outputs=[board_out, main_prompt_out, material_prompt_out,
-                               atmo_prompt_out, tags_out, korean_out])
+                               atmo_prompt_out, tags_out, korean_out,
+                               img_main_out, img_mat_out, img_atmo_out])
 
     # Export
     export_btn.click(fn=export_board_html, inputs=[board_out], outputs=[export_file])
