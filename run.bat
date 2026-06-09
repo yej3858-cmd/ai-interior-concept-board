@@ -1,4 +1,6 @@
 @echo off
 cd /d "%~dp0"
-python app.py
-pause
+echo Starting AI Interior Concept Board...
+start python app.py
+timeout /t 4 /nobreak >nul
+start http://localhost:7860
