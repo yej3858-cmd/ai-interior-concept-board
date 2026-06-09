@@ -1159,7 +1159,9 @@ def evaluate_images(img_main, img_mat, img_atmo, space, mood):
         return "Generate images first."
     results = []
     slots = [("Main View", img_main), ("Material Detail", img_mat), ("Atmosphere", img_atmo)]
-    for label, img in slots:
+    for i, (label, img) in enumerate(slots):
+        if i > 0:
+            time.sleep(4)  # avoid 429 between consecutive Vision calls
         if img is None:
             results.append(f"**{label}**: —")
             continue
@@ -1183,13 +1185,20 @@ def evaluate_images(img_main, img_mat, img_atmo, space, mood):
                                  "thinkingConfig": {"thinkingBudget": 0}}
         }).encode("utf-8")
         req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
-        try:
-            with _urlreq.urlopen(req, timeout=25) as r:
-                data = json.loads(r.read().decode("utf-8"))
-            txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            results.append(f"**{label}**: {txt}")
-        except Exception as e:
-            results.append(f"**{label}**: evaluation failed ({e})")
+        txt = None
+        for attempt in range(3):
+            try:
+                with _urlreq.urlopen(req, timeout=25) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                break
+            except Exception as e:
+                if "429" in str(e) and attempt < 2:
+                    time.sleep(8 * (attempt + 1))
+                    continue
+                txt = f"evaluation failed ({e})"
+                break
+        results.append(f"**{label}**: {txt}")
     return "\n\n".join(results)
 
 
