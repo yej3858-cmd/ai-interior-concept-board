@@ -1,0 +1,3 @@
+여기에 Gamma에서 export한 PPT를 넣으세요:
+- AI_Interior_Concept_Board_Generator.pdf
+- AI_Interior_Concept_Board_Generator.pptx (선택)

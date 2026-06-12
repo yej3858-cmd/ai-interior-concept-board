@@ -1,0 +1,2 @@
+AI_Usage_and_HITL.md를 PDF로 변환해서 AI_Tool_Usage_and_HITL.pdf로 저장하세요.
+(메모장/VSCode에서 열어 인쇄 → PDF로 저장, 또는 온라인 md-to-pdf 변환기 사용)
