@@ -1983,22 +1983,29 @@ body { background: #F7F2E8 !important; }
 .gradio-container strong { background: transparent !important; color: #C57B57 !important; }
 </style>"""
 
-def _free_port(port: int):
-    """Kill any process already bound to `port` so the server always starts on the same port."""
-    import socket, subprocess
+def _port_in_use(port: int) -> bool:
+    import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.settimeout(0.5)
-        if s.connect_ex(("127.0.0.1", port)) != 0:
-            return  # port is free
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+def _kill_pids_on_port(port: int):
+    import subprocess
     try:
         if os.name == "nt":
-            out = subprocess.check_output(
-                f'netstat -ano | findstr :{port} | findstr LISTENING',
-                shell=True, text=True, stderr=subprocess.DEVNULL)
-            pids = {line.split()[-1] for line in out.splitlines() if line.strip()}
+            out = subprocess.check_output("netstat -ano", shell=True, text=True,
+                                           stderr=subprocess.DEVNULL)
+            pids = set()
+            for line in out.splitlines():
+                parts = line.split()
+                if len(parts) >= 5 and parts[0] == "TCP" and parts[3] == "LISTENING":
+                    local_addr = parts[1]
+                    if local_addr.rsplit(":", 1)[-1] == str(port):
+                        pids.add(parts[4])
             for pid in pids:
                 if pid != str(os.getpid()):
-                    subprocess.run(f"taskkill /F /PID {pid}", shell=True,
+                    subprocess.run(f"taskkill /F /T /PID {pid}", shell=True,
                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         else:
             out = subprocess.check_output(f"lsof -ti tcp:{port}", shell=True, text=True)
@@ -2006,10 +2013,22 @@ def _free_port(port: int):
                 if pid != str(os.getpid()):
                     subprocess.run(f"kill -9 {pid}", shell=True,
                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(1)
-        print(f"[Startup] Freed port {port} from previous instance.")
     except Exception as e:
-        print(f"[Startup] Could not free port {port}: {e}")
+        print(f"[Startup] Could not inspect port {port}: {e}")
+
+
+def _free_port(port: int, attempts: int = 6):
+    """Kill any process already bound to `port` so the server always starts on the same port."""
+    for i in range(attempts):
+        if not _port_in_use(port):
+            if i > 0:
+                print(f"[Startup] Port {port} is now free.")
+            return
+        print(f"[Startup] Port {port} is busy — killing previous instance (attempt {i+1}/{attempts})...")
+        _kill_pids_on_port(port)
+        time.sleep(1.5)
+    if _port_in_use(port):
+        print(f"[Startup] WARNING: could not free port {port} after {attempts} attempts.")
 
 
 if __name__ == "__main__":
