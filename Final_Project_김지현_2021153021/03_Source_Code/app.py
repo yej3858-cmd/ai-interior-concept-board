@@ -23,8 +23,30 @@ try:
 except ImportError:
     HAS_PIL = False
 
+import sys
 import urllib.request as _urlreq
 from urllib.parse import quote as _urlquote
+
+# ── In-memory log buffer for Admin panel ───────────────────────────
+_LOG_BUFFER = []
+_LOG_MAX = 200
+
+class _TeeStream:
+    def __init__(self, original):
+        self.original = original
+    def write(self, data):
+        self.original.write(data)
+        if data and data.strip():
+            for line in data.splitlines():
+                if line.strip():
+                    _LOG_BUFFER.append(line)
+            if len(_LOG_BUFFER) > _LOG_MAX:
+                del _LOG_BUFFER[:len(_LOG_BUFFER) - _LOG_MAX]
+    def flush(self):
+        self.original.flush()
+
+sys.stdout = _TeeStream(sys.stdout)
+sys.stderr = _TeeStream(sys.stderr)
 
 def _ai_photo_url(prompt: str, w: int = 800, h: int = 600, seed: int = 0) -> str:
     p = _urlquote((prompt or "interior architecture concept")[:280])
@@ -74,6 +96,8 @@ GEMINI_KEY  = os.environ.get("GEMINI_API_KEY",   "").strip()
 GEMINI_KEY2 = os.environ.get("GEMINI_API_KEY_2", "").strip()
 _GEMINI_KEYS = [k for k in [GEMINI_KEY, GEMINI_KEY2] if k]
 print(f"[Gemini] API key loaded: {'yes' if GEMINI_KEY else 'NO — autofill/narrative disabled'} (keys: {len(_GEMINI_KEYS)})")
+
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin1234").strip()
 
 
 def _safe_json(text: str) -> dict:
@@ -1262,6 +1286,76 @@ def toggle_pin(favs, board_html, space, mood, main_p, mat_p, atmo_p, tags, ko, i
     return updated, gr.update(choices=[e["key"] for e in updated], value=None), gr.update(value=btn_label)
 
 
+# ── Admin panel helpers ─────────────────────────────────────────────
+def admin_check_password(pw):
+    if pw and pw == ADMIN_PASSWORD:
+        return gr.update(visible=True), "✅ Unlocked."
+    return gr.update(visible=False), "❌ Incorrect password."
+
+
+def admin_system_status():
+    lines = ["### 🔌 API / System Status", ""]
+    lines.append(f"- **Gemini keys configured**: {len(_GEMINI_KEYS)}")
+    lines.append(f"- **Ollama**: `{OLLAMA_URL}` (model: `{OLLAMA_MODEL}`) — "
+                  f"{'❌ unreachable (disabled)' if _OLLAMA_DEAD else '✅ available'}")
+    comfy_status = "not checked"
+    if HAS_REQUESTS:
+        try:
+            r = _requests.get("http://127.0.0.1:8188/system_stats", timeout=2)
+            comfy_status = "✅ reachable" if r.status_code == 200 else f"⚠️ HTTP {r.status_code}"
+        except Exception:
+            comfy_status = "❌ unreachable"
+    lines.append(f"- **ComfyUI** (`127.0.0.1:8188`): {comfy_status}")
+    lines.append(f"- **Workflow files**: comfyui_workflow.json "
+                  f"{'✅' if WORKFLOW_PATH.exists() else '❌ missing'}, "
+                  f"Upscale.json {'✅' if UPSCALE_PATH.exists() else '❌ missing'}")
+    return "\n".join(lines)
+
+
+def admin_usage_stats(history, favs):
+    history = history or load_history_from_file()
+    favs = favs or load_favorites_from_file()
+    hist_size = HISTORY_FILE.stat().st_size if HISTORY_FILE.exists() else 0
+    fav_size = FAVORITES_FILE.stat().st_size if FAVORITES_FILE.exists() else 0
+    lines = ["### 📊 Usage / Storage", ""]
+    lines.append(f"- **History entries**: {len(history)} ({hist_size/1024:.1f} KB)")
+    lines.append(f"- **Pinned favorites**: {len(favs)} ({fav_size/1024:.1f} KB)")
+    lines.append("")
+    lines.append("_향후 사용량 기반 요금제 도입 시, 이 영역에 일별/사용자별 생성 횟수, "
+                  "API 호출 횟수, 잔여 크레딧 등을 표시할 수 있습니다._")
+    return "\n".join(lines)
+
+
+def admin_get_logs():
+    if not _LOG_BUFFER:
+        return "(no logs yet)"
+    return "\n".join(_LOG_BUFFER[-50:])
+
+
+def admin_refresh(history, favs):
+    return admin_system_status(), admin_usage_stats(history, favs), admin_get_logs()
+
+
+def admin_clear_history():
+    try:
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+    except Exception:
+        pass
+    gr.Info("History cleared.")
+    return [], gr.update(choices=[], value=None), admin_usage_stats([], None)
+
+
+def admin_clear_favorites():
+    try:
+        with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+    except Exception:
+        pass
+    gr.Info("Favorites cleared.")
+    return [], gr.update(choices=[], value=None), admin_usage_stats(None, [])
+
+
 def upscale_with_comfyui(img, external_url):
     if img is None:
         gr.Warning("No image to upscale.")
@@ -1661,6 +1755,20 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
                                         choices=[e["key"] for e in _init_favs],
                                         interactive=True)
 
+            gr.HTML(_section_header("09 · Admin"))
+            with gr.Accordion("🔐 Admin Panel", open=False):
+                admin_pw_in    = gr.Textbox(label="Password", type="password", scale=3)
+                admin_login_btn = gr.Button("Unlock", size="sm")
+                admin_login_status = gr.Markdown("")
+                with gr.Group(visible=False) as admin_panel:
+                    admin_refresh_btn = gr.Button("🔄 Refresh", size="sm")
+                    admin_system_out  = gr.Markdown("")
+                    admin_usage_out   = gr.Markdown("")
+                    with gr.Row():
+                        admin_clear_hist_btn = gr.Button("🗑 Clear History", size="sm")
+                        admin_clear_fav_btn  = gr.Button("🗑 Clear Favorites", size="sm")
+                    admin_logs_out = gr.Code(label="Recent Logs", language=None, lines=10)
+
         # ── RIGHT MAIN PANEL ─────────────────────────────────────
         with gr.Column(scale=2, elem_classes=["right-panel"]):
 
@@ -1819,6 +1927,18 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
                         outputs=[board_out, main_prompt_out, material_prompt_out,
                                  atmo_prompt_out, tags_out, korean_out,
                                  img_main_out, img_mat_out, img_atmo_out])
+
+    # Admin panel
+    (admin_login_btn.click(fn=admin_check_password, inputs=[admin_pw_in],
+                            outputs=[admin_panel, admin_login_status])
+                     .then(fn=admin_refresh, inputs=[history_state, favorites_state],
+                           outputs=[admin_system_out, admin_usage_out, admin_logs_out]))
+    admin_refresh_btn.click(fn=admin_refresh, inputs=[history_state, favorites_state],
+                             outputs=[admin_system_out, admin_usage_out, admin_logs_out])
+    admin_clear_hist_btn.click(fn=admin_clear_history, inputs=[],
+                                outputs=[history_state, history_dd, admin_usage_out])
+    admin_clear_fav_btn.click(fn=admin_clear_favorites, inputs=[],
+                               outputs=[favorites_state, favorites_dd, admin_usage_out])
 
     # Hi-res re-generate buttons — pass size dropdown to regen_image_hires
     _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
