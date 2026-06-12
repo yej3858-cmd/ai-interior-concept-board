@@ -1,2 +1,11 @@
 .env
 __pycache__/
+
+# runtime data / generated artifacts (not part of source)
+favorites.json
+history.json
+gradio_asset.css
+page7861.html
+gradio-*.log
+gradio-*.err.log
+.Rhistory
