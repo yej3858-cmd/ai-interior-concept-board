@@ -44,6 +44,10 @@ class _TeeStream:
                 del _LOG_BUFFER[:len(_LOG_BUFFER) - _LOG_MAX]
     def flush(self):
         self.original.flush()
+    def isatty(self):
+        return self.original.isatty()
+    def __getattr__(self, name):
+        return getattr(self.original, name)
 
 sys.stdout = _TeeStream(sys.stdout)
 sys.stderr = _TeeStream(sys.stderr)
