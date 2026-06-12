@@ -1,0 +1,4 @@
+AI Interior Concept Board Generator — Source Code Repository
+
+https://github.com/yej3858-cmd/ai-interior-concept-board
+Branch: claude/interior-design-gradio-app-l1Q5b

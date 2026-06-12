@@ -1,0 +1,1 @@
+comfyui_workflow.json, Upscale.json을 로컬 ai-interior-concept-board 폴더에서 복사해서 넣으세요.
