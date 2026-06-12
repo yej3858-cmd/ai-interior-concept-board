@@ -634,15 +634,15 @@ _MATERIAL_PHOTO = {
     "Wood":          "https://img.magnific.com/free-photo/dark-brown-wood-texture-background-with-design-space_53876-160408.jpg?semt=ais_hybrid&w=740&q=80",
     "Concrete":      _ai_photo_url("polished grey concrete wall surface texture, minimalist, architectural material, macro", 400, 240, seed=22),
     "Glass":         _ai_photo_url("clear architectural glass panel, structural glazing, transparent surface, macro", 400, 240, seed=33),
-    "Fabric":        _ai_photo_url("natural linen textile weave close-up, beige fabric texture, upholstery material, macro", 400, 240, seed=44),
+    "Fabric":        "https://images.pexels.com/photos/7794364/pexels-photo-7794364.jpeg?auto=compress&cs=tinysrgb&w=400",
     "Metal":         _ai_photo_url("brushed stainless steel sheet surface, metallic sheen, industrial material, macro", 400, 240, seed=55),
-    "Stone":         _ai_photo_url("white carrara marble slab surface, grey veining, polished stone interior, macro", 400, 240, seed=66),
-    "Brick":         _ai_photo_url("exposed red clay brick wall, rough mortar joints, interior texture, macro", 400, 240, seed=77),
-    "Linen":         _ai_photo_url("natural linen cloth texture, woven fiber close-up, neutral beige, macro", 400, 240, seed=88),
+    "Stone":         "https://images.pexels.com/photos/6634145/pexels-photo-6634145.jpeg?auto=compress&cs=tinysrgb&w=400",
+    "Brick":         "https://images.pexels.com/photos/1875997/pexels-photo-1875997.jpeg?auto=compress&cs=tinysrgb&w=400",
+    "Linen":         "https://images.pexels.com/photos/18444201/pexels-photo-18444201.jpeg?auto=compress&cs=tinysrgb&w=400",
     "Paper":         _ai_photo_url("washi paper texture, handmade paper surface, translucent natural fiber, macro", 400, 240, seed=99),
     "Raw Concrete":  _ai_photo_url("raw unfinished concrete surface texture, grey formwork marks, brutalist material, macro", 400, 240, seed=101),
     "Clay":          _ai_photo_url("natural clay plaster wall texture, earthy terracotta surface, organic material, macro", 400, 240, seed=102),
-    "White Plaster": _ai_photo_url("smooth white plaster wall surface, clean finish, minimalist interior material, macro", 400, 240, seed=103),
+    "White Plaster": "https://images.pexels.com/photos/1939485/pexels-photo-1939485.jpeg?auto=compress&cs=tinysrgb&w=400",
 }
 _SPACE_PHOTO = {
     "Library":          "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=600&fit=crop",
@@ -1201,7 +1201,7 @@ def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko,
     updated = ([entry] + history)[:10]
     try:
         with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-            json.dump([{k: v for k, v in e.items() if k != "board"} | {"board": e["board"][:5000]} for e in updated], f, ensure_ascii=False)
+            json.dump(updated, f, ensure_ascii=False)
     except Exception:
         pass
     return updated
