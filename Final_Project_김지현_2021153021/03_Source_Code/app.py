@@ -596,7 +596,7 @@ def _pale_tint(hex_color: str, mix: float = 0.14, base: tuple = (247, 243, 234))
 
 
 _MATERIAL_PHOTO = {
-    "Wood":          _ai_photo_url("natural oak hardwood floor planks close-up, wood grain texture, warm brown tones, no carpet, macro photography", 400, 240, seed=11),
+    "Wood":          "https://img.magnific.com/free-photo/dark-brown-wood-texture-background-with-design-space_53876-160408.jpg?semt=ais_hybrid&w=740&q=80",
     "Concrete":      _ai_photo_url("polished grey concrete wall surface texture, minimalist, architectural material, macro", 400, 240, seed=22),
     "Glass":         _ai_photo_url("clear architectural glass panel, structural glazing, transparent surface, macro", 400, 240, seed=33),
     "Fabric":        _ai_photo_url("natural linen textile weave close-up, beige fabric texture, upholstery material, macro", 400, 240, seed=44),
