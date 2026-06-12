@@ -1983,7 +1983,37 @@ body { background: #F7F2E8 !important; }
 .gradio-container strong { background: transparent !important; color: #C57B57 !important; }
 </style>"""
 
+def _free_port(port: int):
+    """Kill any process already bound to `port` so the server always starts on the same port."""
+    import socket, subprocess
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        if s.connect_ex(("127.0.0.1", port)) != 0:
+            return  # port is free
+    try:
+        if os.name == "nt":
+            out = subprocess.check_output(
+                f'netstat -ano | findstr :{port} | findstr LISTENING',
+                shell=True, text=True, stderr=subprocess.DEVNULL)
+            pids = {line.split()[-1] for line in out.splitlines() if line.strip()}
+            for pid in pids:
+                if pid != str(os.getpid()):
+                    subprocess.run(f"taskkill /F /PID {pid}", shell=True,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            out = subprocess.check_output(f"lsof -ti tcp:{port}", shell=True, text=True)
+            for pid in out.split():
+                if pid != str(os.getpid()):
+                    subprocess.run(f"kill -9 {pid}", shell=True,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(1)
+        print(f"[Startup] Freed port {port} from previous instance.")
+    except Exception as e:
+        print(f"[Startup] Could not free port {port}: {e}")
+
+
 if __name__ == "__main__":
+    _free_port(7860)
     demo.queue()
     demo.launch(head=FORCE_CSS, theme=_theme, css=CSS,
                 server_name="0.0.0.0", server_port=7860, share=True)
