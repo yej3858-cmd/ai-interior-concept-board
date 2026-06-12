@@ -704,6 +704,7 @@ def _generated_tile(b64: str, height: str = "100%", source_label: str = "Uploade
 def _material_block(name: str) -> str:
     d = MATERIAL_DATA[name]
     photo = _MATERIAL_PHOTO.get(name, "")
+    container_bg = f'background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
     if photo:
         inner = (
             f'<img src="{photo}" style="position:absolute;inset:0;width:100%;height:100%;'
@@ -711,10 +712,8 @@ def _material_block(name: str) -> str:
             f'onerror="this.style.display=\'none\'" />'
             f'<div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,0.45));border-radius:7px;pointer-events:none;"></div>'
         )
-        container_bg = "background:#C8C0B4;"
     else:
         inner = ""
-        container_bg = f'background:linear-gradient(150deg,{d["hex"]},{d["light"]});'
     return (
         f'<div style="flex:1;min-width:78px;">'
         f'<div style="height:60px;{container_bg}'
@@ -1828,7 +1827,9 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
                 admin_login_btn = gr.Button("Unlock", size="sm")
                 admin_login_status = gr.Markdown("")
                 with gr.Group(visible=False) as admin_panel:
-                    admin_refresh_btn = gr.Button("🔄 Refresh", size="sm")
+                    with gr.Row():
+                        admin_refresh_btn = gr.Button("🔄 Refresh", size="sm")
+                        admin_logout_btn  = gr.Button("🚪 Exit Admin", size="sm")
                     admin_system_out  = gr.Markdown("")
                     admin_usage_out   = gr.Markdown("")
                     with gr.Row():
@@ -2006,6 +2007,11 @@ with gr.Blocks(title="AI Interior Concept Board") as demo:
                                 outputs=[history_state, history_dd, admin_usage_out])
     admin_clear_fav_btn.click(fn=admin_clear_favorites, inputs=[],
                                outputs=[favorites_state, favorites_dd, admin_usage_out])
+
+    def _admin_logout():
+        return gr.update(visible=False), "", ""
+    admin_logout_btn.click(fn=_admin_logout, inputs=[],
+                            outputs=[admin_panel, admin_login_status, admin_pw_in])
 
     # Hi-res re-generate buttons — pass size dropdown to regen_image_hires
     _regen_common = [neg_prompt_in, steps_in, cfg_in, seed_in, external_url_in, use_external_in, denoise_in]
