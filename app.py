@@ -144,6 +144,7 @@ def ollama_call(prompt: str, want_json: bool = False, timeout: int = 8) -> str:
     body = json.dumps({"model": OLLAMA_MODEL, "prompt": prompt,
                        "stream": False, "format": "json" if want_json else ""}).encode()
     req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+    _record_usage("ollama_calls")
     try:
         with _urlreq.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read())["response"].strip()
@@ -170,6 +171,7 @@ def _gemini_call_model(model: str, api_key: str, prompt: str, want_json: bool, t
                        "generationConfig": cfg}).encode("utf-8")
     for attempt in range(retries + 1):
         req = _urlreq.Request(url, data=body, headers={"Content-Type": "application/json"})
+        _record_usage("gemini_calls")
         try:
             with _urlreq.urlopen(req, timeout=timeout) as r:
                 data = json.loads(r.read().decode("utf-8"))
@@ -371,6 +373,34 @@ WORKFLOW_PATH   = Path("comfyui_workflow.json")
 UPSCALE_PATH    = Path("Upscale.json")
 HISTORY_FILE    = Path("history.json")
 FAVORITES_FILE  = Path("favorites.json")
+USAGE_FILE      = Path("usage.json")
+
+GEMINI_FREE_QUOTA_PER_KEY = 250  # gemini-2.5-flash free tier requests/day
+
+
+def _usage_today_key():
+    return time.strftime("%Y-%m-%d")
+
+
+def _load_usage():
+    if USAGE_FILE.exists():
+        try:
+            with open(USAGE_FILE, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _record_usage(event: str, n: int = 1):
+    usage = _load_usage()
+    day = usage.setdefault(_usage_today_key(), {})
+    day[event] = day.get(event, 0) + n
+    try:
+        with open(USAGE_FILE, "w", encoding="utf-8") as f:
+            json.dump(usage, f, ensure_ascii=False)
+    except Exception:
+        pass
 
 
 def _future_load_workflow():
@@ -459,6 +489,7 @@ def _future_comfyui_generate(server_url: str, workflow: dict, timeout: int = 300
         raise RuntimeError("'requests' not installed")
     if not HAS_PIL:
         raise RuntimeError("'Pillow' not installed")
+    _record_usage("comfyui_calls")
     url       = server_url.rstrip("/")
     client_id = str(uuid.uuid4())
     resp = _requests.post(f"{url}/prompt",
@@ -1161,6 +1192,7 @@ def export_board_pdf(board_html):
 
 
 def add_to_history(history, space, mood, board, main_p, mat_p, atmo_p, tags, ko, img_main=None, img_mat=None, img_atmo=None):
+    _record_usage("generations")
     entry = {"key": f"{space} · {mood} — {time.strftime('%H:%M')}",
              "board": board, "main": main_p, "mat": mat_p,
              "atmo": atmo_p, "tags": tags, "ko": ko,
@@ -1324,9 +1356,40 @@ def admin_usage_stats(history, favs):
     lines = ["### 📊 Usage / Storage", ""]
     lines.append(f"- **History entries**: {len(history)} ({hist_size/1024:.1f} KB)")
     lines.append(f"- **Pinned favorites**: {len(favs)} ({fav_size/1024:.1f} KB)")
+
+    usage = _load_usage()
+    today = usage.get(_usage_today_key(), {})
+    gen_today    = today.get("generations", 0)
+    gemini_today = today.get("gemini_calls", 0)
+    ollama_today = today.get("ollama_calls", 0)
+    comfy_today  = today.get("comfyui_calls", 0)
+
+    total_quota = GEMINI_FREE_QUOTA_PER_KEY * len(_GEMINI_KEYS)
+    remaining   = max(total_quota - gemini_today, 0)
+
     lines.append("")
-    lines.append("_향후 사용량 기반 요금제 도입 시, 이 영역에 일별/사용자별 생성 횟수, "
-                  "API 호출 횟수, 잔여 크레딧 등을 표시할 수 있습니다._")
+    lines.append(f"### 📈 Today ({_usage_today_key()})")
+    lines.append(f"- **Concept generations**: {gen_today}")
+    lines.append(f"- **Gemini API calls**: {gemini_today}")
+    lines.append(f"- **Ollama calls**: {ollama_today}")
+    lines.append(f"- **ComfyUI image generations**: {comfy_today}")
+    lines.append(f"- **Gemini remaining quota (est.)**: {remaining} / {total_quota} "
+                  f"({len(_GEMINI_KEYS)} key{'s' if len(_GEMINI_KEYS) != 1 else ''} × "
+                  f"{GEMINI_FREE_QUOTA_PER_KEY}/day free tier)")
+
+    if len(usage) > 1:
+        lines.append("")
+        lines.append("### 🗓 Recent Days")
+        for day in sorted(usage.keys(), reverse=True)[:7]:
+            d = usage[day]
+            lines.append(f"- {day}: gen {d.get('generations', 0)} · "
+                          f"gemini {d.get('gemini_calls', 0)} · "
+                          f"ollama {d.get('ollama_calls', 0)} · "
+                          f"comfyui {d.get('comfyui_calls', 0)}")
+
+    lines.append("")
+    lines.append("_향후 사용량 기반 요금제 도입 시, 위 일별 통계를 사용자별로 확장해 "
+                  "크레딧 차감/한도 제한에 활용할 수 있습니다._")
     return "\n".join(lines)
 
 
