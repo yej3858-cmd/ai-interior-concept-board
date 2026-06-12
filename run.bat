@@ -5,4 +5,4 @@ git pull
 echo Starting AI Interior Concept Board...
 start python app.py
 timeout /t 6 /nobreak >nul
-start http://localhost:7861
+start http://localhost:7860

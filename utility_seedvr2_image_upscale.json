@@ -1,0 +1,899 @@
+{
+  "config": {},
+  "definitions": {
+    "subgraphs": [
+      {
+        "config": {},
+        "extra": {
+          "workflowRendererVersion": "LG"
+        },
+        "groups": [],
+        "id": "c35dd4ba-0fe3-47d6-afce-1c56d9fe5beb",
+        "inputNode": {
+          "bounding": [
+            -930,
+            790,
+            120,
+            60
+          ],
+          "id": -10
+        },
+        "inputs": [
+          {
+            "id": "040e9c36-17d5-4d9b-93e3-f61d43013403",
+            "linkIds": [
+              49,
+              50
+            ],
+            "localized_name": "image",
+            "name": "image",
+            "pos": [
+              -830,
+              810
+            ],
+            "type": "IMAGE"
+          }
+        ],
+        "links": [
+          {
+            "id": 36,
+            "origin_id": 21,
+            "origin_slot": 0,
+            "target_id": 40,
+            "target_slot": 0,
+            "type": "INT"
+          },
+          {
+            "id": 37,
+            "origin_id": 21,
+            "origin_slot": 1,
+            "target_id": 40,
+            "target_slot": 1,
+            "type": "INT"
+          },
+          {
+            "id": 42,
+            "origin_id": 43,
+            "origin_slot": 0,
+            "target_id": 25,
+            "target_slot": 0,
+            "type": "INT,FLOAT"
+          },
+          {
+            "id": 23,
+            "origin_id": 30,
+            "origin_slot": 0,
+            "target_id": 25,
+            "target_slot": 1,
+            "type": "FLOAT"
+          },
+          {
+            "id": 38,
+            "origin_id": 40,
+            "origin_slot": 0,
+            "target_id": 43,
+            "target_slot": 0,
+            "type": "BOOLEAN"
+          },
+          {
+            "id": 41,
+            "origin_id": 21,
+            "origin_slot": 0,
+            "target_id": 43,
+            "target_slot": 1,
+            "type": "INT"
+          },
+          {
+            "id": 40,
+            "origin_id": 21,
+            "origin_slot": 1,
+            "target_id": 43,
+            "target_slot": 2,
+            "type": "INT"
+          },
+          {
+            "id": 25,
+            "origin_id": 28,
+            "origin_slot": 0,
+            "target_id": 27,
+            "target_slot": 1,
+            "type": "SEEDVR2_DIT"
+          },
+          {
+            "id": 26,
+            "origin_id": 22,
+            "origin_slot": 0,
+            "target_id": 27,
+            "target_slot": 2,
+            "type": "SEEDVR2_VAE"
+          },
+          {
+            "id": 27,
+            "origin_id": 25,
+            "origin_slot": 0,
+            "target_id": 27,
+            "target_slot": 3,
+            "type": "INT"
+          },
+          {
+            "id": 43,
+            "origin_id": 27,
+            "origin_slot": 0,
+            "target_id": -20,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 44,
+            "origin_id": 27,
+            "origin_slot": 0,
+            "target_id": -20,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 49,
+            "origin_id": -10,
+            "origin_slot": 0,
+            "target_id": 21,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 50,
+            "origin_id": -10,
+            "origin_slot": 0,
+            "target_id": 27,
+            "target_slot": 0,
+            "type": "IMAGE"
+          }
+        ],
+        "name": "Image Upscale(SeedVR2)",
+        "nodes": [
+          {
+            "color": "rgba(38, 73, 116, 0.7)",
+            "flags": {
+              "collapsed": false
+            },
+            "id": 43,
+            "inputs": [
+              {
+                "link": 38,
+                "localized_name": "if_condition",
+                "name": "if_condition",
+                "type": "*"
+              },
+              {
+                "link": 41,
+                "localized_name": "when_TRUE",
+                "name": "when_TRUE",
+                "type": "*"
+              },
+              {
+                "link": 40,
+                "localized_name": "when_FALSE",
+                "name": "when_FALSE",
+                "type": "*"
+              }
+            ],
+            "mode": 0,
+            "order": 8,
+            "outputs": [
+              {
+                "links": [
+                  42
+                ],
+                "localized_name": "?",
+                "name": "?",
+                "type": "*"
+              }
+            ],
+            "pos": [
+              31.66672079424056,
+              1556.666653837735
+            ],
+            "properties": {
+              "Node name for S&R": "LayerUtility: If "
+            },
+            "size": [
+              187.5,
+              66
+            ],
+            "title": "IfElse",
+            "type": "LayerUtility: If ",
+            "widgets_values": []
+          },
+          {
+            "flags": {
+              "collapsed": false
+            },
+            "id": 40,
+            "inputs": [
+              {
+                "link": 36,
+                "localized_name": "a",
+                "name": "a",
+                "type": "*"
+              },
+              {
+                "link": 37,
+                "localized_name": "b",
+                "name": "b",
+                "type": "*"
+              }
+            ],
+            "mode": 0,
+            "order": 7,
+            "outputs": [
+              {
+                "links": [
+                  38
+                ],
+                "localized_name": "BOOLEAN",
+                "name": "BOOLEAN",
+                "type": "BOOLEAN"
+              }
+            ],
+            "pos": [
+              -310,
+              1450
+            ],
+            "properties": {
+              "Node name for S&R": "ImpactCompare"
+            },
+            "size": [
+              252.01822916666669,
+              78
+            ],
+            "type": "ImpactCompare",
+            "widgets_values": [
+              "a <= b"
+            ]
+          },
+          {
+            "flags": {
+              "collapsed": false
+            },
+            "id": 25,
+            "inputs": [
+              {
+                "link": 42,
+                "localized_name": "a",
+                "name": "a",
+                "shape": 7,
+                "type": "INT,FLOAT"
+              },
+              {
+                "link": 23,
+                "localized_name": "b",
+                "name": "b",
+                "shape": 7,
+                "type": "INT,FLOAT"
+              }
+            ],
+            "mode": 0,
+            "order": 5,
+            "outputs": [
+              {
+                "links": [
+                  27
+                ],
+                "localized_name": "INT",
+                "name": "INT",
+                "type": "INT"
+              },
+              {
+                "links": null,
+                "localized_name": "FLOAT",
+                "name": "FLOAT",
+                "type": "FLOAT"
+              }
+            ],
+            "pos": [
+              400,
+              1560
+            ],
+            "properties": {
+              "Node name for S&R": "SimpleMath+",
+              "cnr_id": "comfyui_essentials",
+              "ver": "1.1.0"
+            },
+            "size": [
+              260.31796875,
+              78
+            ],
+            "title": "Upscale to Shortest Edge (pixels)",
+            "type": "SimpleMath+",
+            "widgets_values": [
+              "a*b"
+            ]
+          },
+          {
+            "bgcolor": "#353",
+            "color": "#232",
+            "flags": {},
+            "id": 30,
+            "inputs": [
+              {
+                "label": "upscale_by",
+                "link": null,
+                "localized_name": "value",
+                "name": "value",
+                "type": "FLOAT",
+                "widget": {
+                  "name": "value"
+                }
+              }
+            ],
+            "mode": 0,
+            "order": 0,
+            "outputs": [
+              {
+                "links": [
+                  23
+                ],
+                "localized_name": "FLOAT",
+                "name": "FLOAT",
+                "type": "FLOAT"
+              }
+            ],
+            "pos": [
+              -40,
+              1710
+            ],
+            "properties": {
+              "Node name for S&R": "PrimitiveFloat",
+              "cnr_id": "comfy-core",
+              "ver": "0.3.66"
+            },
+            "size": [
+              251.9921875,
+              58
+            ],
+            "title": "Upscale Factor",
+            "type": "PrimitiveFloat",
+            "widgets_values": [
+              4
+            ]
+          },
+          {
+            "flags": {},
+            "id": 27,
+            "inputs": [
+              {
+                "link": 50,
+                "localized_name": "image",
+                "name": "image",
+                "type": "IMAGE"
+              },
+              {
+                "link": 25,
+                "localized_name": "dit",
+                "name": "dit",
+                "type": "SEEDVR2_DIT"
+              },
+              {
+                "link": 26,
+                "localized_name": "vae",
+                "name": "vae",
+                "type": "SEEDVR2_VAE"
+              },
+              {
+                "link": 27,
+                "localized_name": "resolution",
+                "name": "resolution",
+                "type": "INT",
+                "widget": {
+                  "name": "resolution"
+                }
+              }
+            ],
+            "mode": 0,
+            "order": 6,
+            "outputs": [
+              {
+                "links": [
+                  43,
+                  44
+                ],
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE"
+              }
+            ],
+            "pos": [
+              790,
+              800
+            ],
+            "properties": {
+              "Node name for S&R": "SeedVR2VideoUpscaler",
+              "cnr_id": "seedvr2_videoupscaler",
+              "ver": "2a873e2f286224bb00c60fe3fb61b88b65258a6d"
+            },
+            "size": [
+              323.99739583333337,
+              386
+            ],
+            "type": "SeedVR2VideoUpscaler",
+            "widgets_values": [
+              296258884,
+              "randomize",
+              1080,
+              0,
+              1,
+              false,
+              "lab",
+              0,
+              0,
+              0,
+              0,
+              "cpu",
+              false
+            ]
+          },
+          {
+            "flags": {},
+            "id": 22,
+            "inputs": [
+              {
+                "link": null,
+                "localized_name": "torch_compile_args",
+                "name": "torch_compile_args",
+                "shape": 7,
+                "type": "TORCH_COMPILE_ARGS"
+              }
+            ],
+            "mode": 0,
+            "order": 1,
+            "outputs": [
+              {
+                "links": [
+                  26
+                ],
+                "localized_name": "SEEDVR2_VAE",
+                "name": "SEEDVR2_VAE",
+                "type": "SEEDVR2_VAE"
+              }
+            ],
+            "pos": [
+              220,
+              1080
+            ],
+            "properties": {
+              "Node name for S&R": "SeedVR2LoadVAEModel",
+              "cnr_id": "seedvr2_videoupscaler",
+              "ver": "2a873e2f286224bb00c60fe3fb61b88b65258a6d"
+            },
+            "size": [
+              443.99739583333337,
+              307.2135416666667
+            ],
+            "type": "SeedVR2LoadVAEModel",
+            "widgets_values": [
+              "ema_vae_fp16.safetensors",
+              "cuda:0",
+              true,
+              1024,
+              128,
+              true,
+              1024,
+              128,
+              "false",
+              "none",
+              false
+            ]
+          },
+          {
+            "flags": {},
+            "id": 28,
+            "inputs": [
+              {
+                "link": null,
+                "localized_name": "torch_compile_args",
+                "name": "torch_compile_args",
+                "shape": 7,
+                "type": "TORCH_COMPILE_ARGS"
+              }
+            ],
+            "mode": 0,
+            "order": 2,
+            "outputs": [
+              {
+                "links": [
+                  25
+                ],
+                "localized_name": "SEEDVR2_DIT",
+                "name": "SEEDVR2_DIT",
+                "type": "SEEDVR2_DIT"
+              }
+            ],
+            "pos": [
+              220,
+              810
+            ],
+            "properties": {
+              "Node name for S&R": "SeedVR2LoadDiTModel",
+              "cnr_id": "seedvr2_videoupscaler",
+              "ver": "2a873e2f286224bb00c60fe3fb61b88b65258a6d"
+            },
+            "size": [
+              443.99739583333337,
+              203.88020833333334
+            ],
+            "type": "SeedVR2LoadDiTModel",
+            "widgets_values": [
+              "seedvr2_ema_7b_fp16.safetensors",
+              "cuda:0",
+              0,
+              false,
+              "cpu",
+              false,
+              "sdpa"
+            ]
+          },
+          {
+            "flags": {
+              "collapsed": false
+            },
+            "id": 21,
+            "inputs": [
+              {
+                "link": 49,
+                "localized_name": "image",
+                "name": "image",
+                "type": "IMAGE"
+              }
+            ],
+            "mode": 0,
+            "order": 4,
+            "outputs": [
+              {
+                "links": [
+                  36,
+                  41
+                ],
+                "localized_name": "width",
+                "name": "width",
+                "type": "INT"
+              },
+              {
+                "links": [
+                  37,
+                  40
+                ],
+                "localized_name": "height",
+                "name": "height",
+                "type": "INT"
+              },
+              {
+                "links": null,
+                "localized_name": "batch_size",
+                "name": "batch_size",
+                "type": "INT"
+              }
+            ],
+            "pos": [
+              -590,
+              1580
+            ],
+            "properties": {
+              "Node name for S&R": "GetImageSize",
+              "cnr_id": "comfy-core",
+              "ver": "0.3.66"
+            },
+            "size": [
+              187.5,
+              66
+            ],
+            "type": "GetImageSize",
+            "widgets_values": []
+          },
+          {
+            "bgcolor": "#000",
+            "color": "#222",
+            "flags": {
+              "collapsed": false
+            },
+            "id": 26,
+            "inputs": [],
+            "mode": 0,
+            "order": 3,
+            "outputs": [],
+            "pos": [
+              -170,
+              830
+            ],
+            "properties": {},
+            "size": [
+              325,
+              266.484375
+            ],
+            "title": "Note",
+            "type": "MarkdownNote",
+            "widgets_values": [
+              "## About SeedVR2\n\nYou can watch a comprehensive tutorial from the author on [Youtube](https://www.youtube.com/watch?v=MBtWYXq_r60) or check out the [Github](https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler).\n\n## Quick Notes\nHover over the node inputs for tooltip info from author\n\ninput_noise_scale softens higher frequency details (e.g. skin textures)\n\nlatent_noise_scale softens low frequency details. Best around 0.01-0.05 (but depends on upscale factor)\n\nNodes support alpha masks\n\n\n"
+            ]
+          }
+        ],
+        "outputNode": {
+          "bounding": [
+            1365,
+            1215,
+            120,
+            60
+          ],
+          "id": -20
+        },
+        "outputs": [
+          {
+            "id": "43c03fed-dfc5-4410-b196-9d1bd4f44ba3",
+            "linkIds": [
+              43,
+              44
+            ],
+            "localized_name": "IMAGE",
+            "name": "IMAGE",
+            "pos": [
+              1385,
+              1235
+            ],
+            "type": "IMAGE"
+          }
+        ],
+        "revision": 0,
+        "state": {
+          "lastGroupId": 2,
+          "lastLinkId": 50,
+          "lastNodeId": 46,
+          "lastRerouteId": 0
+        },
+        "version": 1,
+        "widgets": []
+      }
+    ]
+  },
+  "extra": {
+    "VHS_KeepIntermediate": true,
+    "VHS_MetadataImage": true,
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "ds": {
+      "offset": [
+        1210.5138899640394,
+        -79.66861923012456
+      ],
+      "scale": 0.7904808227417065
+    },
+    "frontendVersion": "1.38.12",
+    "workflowRendererVersion": "Vue"
+  },
+  "groups": [],
+  "id": "38e4bb73-65f3-4be1-b8fb-07f98ee4021b",
+  "last_link_id": 52,
+  "last_node_id": 48,
+  "links": [
+    [
+      46,
+      24,
+      0,
+      47,
+      0,
+      "IMAGE"
+    ],
+    [
+      48,
+      47,
+      0,
+      45,
+      0,
+      "IMAGE"
+    ],
+    [
+      51,
+      24,
+      0,
+      46,
+      0,
+      "IMAGE"
+    ],
+    [
+      52,
+      47,
+      0,
+      46,
+      1,
+      "IMAGE"
+    ]
+  ],
+  "nodes": [
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {},
+      "id": 24,
+      "inputs": [],
+      "mode": 0,
+      "order": 0,
+      "outputs": [
+        {
+          "links": [
+            46,
+            51
+          ],
+          "name": "IMAGE",
+          "type": "IMAGE"
+        },
+        {
+          "links": [],
+          "name": "MASK",
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        -1249.6664862090206,
+        448.00010405388696
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.52"
+      },
+      "size": [
+        700,
+        530.453125
+      ],
+      "type": "LoadImage",
+      "widgets_values": [
+        "vr_ad.png",
+        "image"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 45,
+      "inputs": [
+        {
+          "link": 48,
+          "name": "images",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 3,
+      "outputs": [],
+      "pos": [
+        140,
+        450
+      ],
+      "properties": {},
+      "size": [
+        708,
+        511
+      ],
+      "type": "SaveImage",
+      "widgets_values": [
+        "ComfyUI-upscaled"
+      ]
+    },
+    {
+      "bgcolor": "#000",
+      "color": "#222",
+      "flags": {},
+      "id": 48,
+      "inputs": [],
+      "mode": 0,
+      "order": 1,
+      "outputs": [],
+      "pos": [
+        1620.3334966859536,
+        448.00003010850446
+      ],
+      "properties": {},
+      "size": [
+        345.578125,
+        113.296875
+      ],
+      "title": "Note",
+      "type": "MarkdownNote",
+      "widgets_values": [
+        "Image Compare is now only available under Nodes 2.0. Open menu -> Nodes 2.0 to switch"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 46,
+      "inputs": [
+        {
+          "link": 51,
+          "name": "image_a",
+          "shape": 7,
+          "type": "IMAGE"
+        },
+        {
+          "link": 52,
+          "name": "image_b",
+          "shape": 7,
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 4,
+      "outputs": [],
+      "pos": [
+        900.0000551010347,
+        450.0000086962507
+      ],
+      "properties": {
+        "Node name for S&R": "ImageCompare"
+      },
+      "size": [
+        700,
+        510
+      ],
+      "title": "Image Compare (Before/After)",
+      "type": "ImageCompare",
+      "widgets_values": [
+        {
+          "after": "/api/view?filename=fa4b6ce837d8f13afef0900c2e5f8fdb28fea1ec3e33d73749ffa2e8d88a84a7.png&subfolder=&type=temp",
+          "before": "/api/view?filename=b4cd42f86cfc2356bf6af77acea492469a5fefed38f73340418a9a88c3bc3264.png&subfolder=&type=temp"
+        }
+      ]
+    },
+    {
+      "flags": {},
+      "id": 47,
+      "inputs": [
+        {
+          "link": 46,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 2,
+      "outputs": [
+        {
+          "links": [
+            48,
+            52
+          ],
+          "name": "IMAGE",
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        -450.0000029644875,
+        450.0000634848535
+      ],
+      "properties": {
+        "proxyWidgets": [
+          [
+            "28",
+            "model"
+          ],
+          [
+            "30",
+            "value"
+          ],
+          [
+            "27",
+            "seed"
+          ],
+          [
+            "27",
+            "control_after_generate"
+          ]
+        ]
+      },
+      "size": [
+        500,
+        180
+      ],
+      "title": "SeedVR2 Image Upscaler",
+      "type": "c35dd4ba-0fe3-47d6-afce-1c56d9fe5beb",
+      "widgets_values": []
+    }
+  ],
+  "revision": 0,
+  "version": 0.4
+}
