@@ -1,5 +1,0 @@
-생성된 컨셉보드 결과물(PNG/PDF)을 여러 개 넣으세요:
-- concept_board_library.png
-- concept_board_office.png
-- concept_board_lounge.pdf
-등 (앱에서 Export 버튼으로 생성)

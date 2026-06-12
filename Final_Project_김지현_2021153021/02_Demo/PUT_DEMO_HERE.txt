@@ -1,7 +1,0 @@
-여기에 데모 영상과 스크린샷을 넣으세요:
-- demo_video.mp4 (2-3분)
-- screenshots/01_web_interface.png
-- screenshots/02_concept_generation.png
-- screenshots/03_image_generation.png
-- screenshots/04_img2img_before_after.png
-- screenshots/05_export_result.png
